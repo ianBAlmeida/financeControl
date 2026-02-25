@@ -1,4 +1,4 @@
-//enum de todas as categorias disponíveis
+//enum de todas as categorias disponíveis, pode ser mudado
 enum Category {
   alimentacao,
   transporte,

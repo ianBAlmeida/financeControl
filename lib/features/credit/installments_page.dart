@@ -107,44 +107,82 @@ class _InstallmentsPageState extends State<InstallmentsPage> {
               ].join(' • ');
 
               return Card(
-                child: ListTile(
-                  isThreeLine: true,
-                  contentPadding: const EdgeInsets.symmetric(
+                child: Padding(
+                  padding: const EdgeInsetsGeometry.symmetric(
                     horizontal: 12,
-                    vertical: 8,
+                    vertical: 10,
                   ),
-                  title: Text(plan.description),
-                  subtitle: Text(subtitle),
-                  trailing: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      minWidth: 96,
-                      maxWidth: 120,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(currency.format(plan.installmentValue)),
-                        const SizedBox(height: 6),
-                        Wrap(
-                          spacing: 4,
-                          runSpacing: 4,
-                          alignment: WrapAlignment.end,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            IconButton(
-                              onPressed: () => _openDialog(plan),
-                              icon: const Icon(Icons.edit, size: 20),
-                              tooltip: 'Editar',
+                            Text(
+                              plan.description,
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.titleMedium,
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.delete, size: 20),
-                              onPressed: () => _remove(plan.id),
-                              tooltip: 'Remover',
+                            const SizedBox(height: 4),
+                            Text(
+                              subtitle,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodyMedium,
                             ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          minWidth: 90,
+                          maxWidth: 110,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              currency.format(plan.installmentValue),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                InkWell(
+                                  borderRadius: BorderRadius.circular(20),
+                                  onTap: () => _openDialog(plan),
+                                  child: const Padding(
+                                    padding: EdgeInsetsGeometry.all(6),
+                                    child: Icon(Icons.edit, size: 18),
+                                  ),
+                                ),
+                                InkWell(
+                                  borderRadius: BorderRadius.circular(20),
+                                  onTap: () => _remove(plan.id),
+                                  child: const Padding(
+                                    padding: EdgeInsetsGeometry.all(6),
+                                    child: Icon(Icons.delete, size: 18),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               );

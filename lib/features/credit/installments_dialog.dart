@@ -59,6 +59,10 @@ class _InstallmentsDialogState extends State<InstallmentsDialog> {
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
     );
+
+    if (picked != null) {
+      setState(() => selectedDate = picked);
+    }
   }
 
   Future<void> _save() async {
@@ -89,106 +93,119 @@ class _InstallmentsDialogState extends State<InstallmentsDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final TextTheme = Theme.of(context).textTheme;
+    final textTheme = Theme.of(context).textTheme;
     return Dialog(
-      backgroundColor: const Color.fromARGB(
-        255,
-        0,
-        0,
-        0,
-      ).withValues(alpha: 0.88),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: SingleChildScrollView(
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: 18,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              widget.existing == null
-                  ? 'Novo Parcelamento'
-                  : 'Editar Parcelamento',
-              style: TextTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+      child: ClipRRect(
+        borderRadius: BorderRadiusGeometry.circular(16),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.72),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.10),
+              width: 1,
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: descCtrl,
-              decoration: const InputDecoration(labelText: 'Descrição'),
+          ),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 18,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 16,
             ),
-            TextField(
-              controller: personCtrl,
-              decoration: const InputDecoration(labelText: 'Pessoa'),
-            ),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<Category>(
-              value: selected,
-              decoration: const InputDecoration(labelText: 'Categoria'),
-              items: Category.values
-                  .map((c) => DropdownMenuItem(value: c, child: Text(c.label)))
-                  .toList(),
-              onChanged: (v) => setState(() => selected = v ?? Category.outros),
-            ),
-            TextField(
-              controller: valueCtrl,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: const InputDecoration(labelText: 'Valor da parcela'),
-            ),
-            Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: totalCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Total de parcelas',
-                    ),
+                Text(
+                  widget.existing == null
+                      ? 'Novo Parcelamento'
+                      : 'Editar Parcelamento',
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: currentCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Parcela atual',
+                const SizedBox(height: 12),
+                TextField(
+                  controller: descCtrl,
+                  decoration: const InputDecoration(labelText: 'Descrição'),
+                ),
+                TextField(
+                  controller: personCtrl,
+                  decoration: const InputDecoration(labelText: 'Pessoa'),
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<Category>(
+                  value: selected,
+                  decoration: const InputDecoration(labelText: 'Categoria'),
+                  items: Category.values
+                      .map(
+                        (c) => DropdownMenuItem(value: c, child: Text(c.label)),
+                      )
+                      .toList(),
+                  onChanged: (v) =>
+                      setState(() => selected = v ?? Category.outros),
+                ),
+                TextField(
+                  controller: valueCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: const InputDecoration(
+                    labelText: 'Valor da parcela',
+                  ),
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: totalCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Total de parcelas',
+                        ),
+                      ),
                     ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: currentCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Parcela atual',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Início: ${DateFormat.yMd('pt_BR').format(selectedDate)}',
+                        style: textTheme.bodyMedium,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: _pickDate,
+                      child: const Text('Selecionar'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _save,
+                    child: const Text('Salvar'),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Início: ${DateFormat.yMd('pt_BR').format(selectedDate)}',
-                    style: TextTheme.bodyMedium,
-                  ),
-                ),
-                TextButton(
-                  onPressed: _pickDate,
-                  child: const Text('Selecionar'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _save,
-                child: const Text('Salvar'),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

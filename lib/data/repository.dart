@@ -39,7 +39,8 @@ class FinanceRepository {
 
   Future<void> addDebit(DebitEntry entry) async {
     await ensureLoaded();
-    _debits = [..._debits, entry.copyWith(id: _uuid.v4())];
+    final newEntry = entry.copyWith(id: _uuid.v4());
+    _debits = [..._debits, newEntry];
     await _storage.saveDebits(_debits);
   }
 
@@ -63,7 +64,8 @@ class FinanceRepository {
 
   Future<void> addCredit(CreditEntry entry) async {
     await ensureLoaded();
-    _credits = [..._credits, entry.copyWith(id: _uuid.v4())];
+    final newEntry = entry.copyWith(id: _uuid.v4());
+    _credits = [..._credits, newEntry];
     await _storage.saveCredits(_credits);
   }
 
@@ -87,7 +89,8 @@ class FinanceRepository {
 
   Future<void> addInstallment(InstallmentPlan plan) async {
     await ensureLoaded();
-    _installments = [..._installments, plan.copyWith(id: _uuid.v4())];
+    final newEntry = plan.copyWith(id: _uuid.v4());
+    _installments = [..._installments, newEntry];
     await _storage.saveInstallments(_installments);
   }
 

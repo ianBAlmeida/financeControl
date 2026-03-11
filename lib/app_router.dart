@@ -20,7 +20,10 @@ final appRouter = GoRouter(
           path: 'installments',
           builder: (context, state) => const InstallmentsPage(),
         ),
-        GoRoute(path: 'summary', builder: (context, state) => SummaryPage()),
+        GoRoute(
+          path: 'summary',
+          builder: (context, state) => const SummaryPage(),
+        ),
       ],
     ),
   ],

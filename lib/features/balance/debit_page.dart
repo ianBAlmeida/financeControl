@@ -28,17 +28,25 @@ class _DebitPageState extends State<DebitPage> {
 
   //Carrega os lançamentos e saldo do mês corrente
   Future<void> _load() async {
-    setState(() => loading = true);
-    final now = DateTime.now();
-    final list = await repo.getDebits();
-    final bal = await repo.getInitialBalance(now.year, now.month);
-    setState(() {
-      debits = list
-          .where((e) => e.date.year == now.year && e.date.month == now.month)
-          .toList();
-      initialBalance = bal;
-      loading = false;
-    });
+    try {
+      await repo.reload();
+      setState(() => loading = true);
+      final now = DateTime.now();
+      final list = await repo.getDebits();
+      final bal = await repo.getInitialBalance(now.year, now.month);
+      setState(() {
+        debits = list
+            .where((e) => e.date.year == now.year && e.date.month == now.month)
+            .toList();
+        initialBalance = bal;
+        loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return setState(() => loading = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro ao carregar débitos: $e')));
+    }
   }
 
   double get totalSpent => debits.fold(0, (p, e) => p + e.amount);
@@ -56,7 +64,10 @@ class _DebitPageState extends State<DebitPage> {
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Valor'),
+          decoration: const InputDecoration(
+            labelText: 'Valor',
+            prefixText: 'R\$ ',
+          ),
         ),
         actions: [
           TextButton(

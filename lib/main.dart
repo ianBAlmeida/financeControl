@@ -1,13 +1,21 @@
 import 'package:finance_control/app_router.dart';
 import 'package:finance_control/app_theme.dart';
+import 'package:finance_control/data/local_storage.dart';
+import 'package:finance_control/data/repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:provider/provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('pt_BR');
-  runApp(const FinanceApp());
+  runApp(
+    Provider<FinanceRepository>(
+      create: (_) => FinanceRepository(LocalStorage()),
+      child: const FinanceApp(),
+    ),
+  );
 }
 
 class FinanceApp extends StatelessWidget {

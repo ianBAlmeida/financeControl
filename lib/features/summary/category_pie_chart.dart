@@ -32,7 +32,6 @@ class CategoryPieChart extends StatelessWidget {
 }
 
 Map<Category, Color> _categoryColors(BuildContext context) {
-  final cs = Theme.of(context).colorScheme;
   return {
     Category.alimentacao: Colors.redAccent,
     Category.carro: Colors.blueGrey,

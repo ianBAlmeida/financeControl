@@ -4,7 +4,6 @@ import '../../data/repository.dart';
 import '../../data/local_storage.dart';
 import '../../data/models.dart';
 import '../summary/category_totals.dart';
-import '../summary/category_pie_chart.dart';
 import '../../data/category.dart';
 
 // Tela de resumo geral

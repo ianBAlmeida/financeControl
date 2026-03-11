@@ -2,6 +2,7 @@ import 'package:finance_control/data/category.dart';
 import 'package:finance_control/data/local_storage.dart';
 import 'package:finance_control/data/models.dart';
 import 'package:finance_control/data/repository.dart';
+import 'package:finance_control/features/credit/installments_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -14,7 +15,7 @@ class InstallmentsPage extends StatefulWidget {
 
 class _InstallmentsPageState extends State<InstallmentsPage> {
   late final FinanceRepository repo;
-  List<InstallmentPlan> plans = [];
+  List<InstallmentPlan> installments = [];
   bool loading = true;
   final currency = NumberFormat.simpleCurrency(locale: 'pt_BR');
 
@@ -27,178 +28,129 @@ class _InstallmentsPageState extends State<InstallmentsPage> {
 
   Future<void> _load() async {
     setState(() => loading = true);
-    final list = await repo.getInstallments();
-    setState(() {
-      plans = list;
-      loading = false;
-    });
+    try {
+      await repo.reload();
+      final list = await repo.getInstallments();
+      setState(() {
+        installments = list;
+        loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => loading = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro ao carregar parcelas: $e')));
+    }
   }
 
-  Future<void> _addOrEdit(InstallmentPlan? existing) async {
-    final descCtrl = TextEditingController(text: existing?.description ?? '');
-    final personCtrl = TextEditingController(text: existing?.person ?? '');
-    final valueCtrl = TextEditingController(
-      text: existing?.installmentValue.toString() ?? '',
-    );
-    final totalCtrl = TextEditingController(
-      text: existing?.totalInstallments.toString() ?? '',
-    );
-    final currentCtrl = TextEditingController(
-      text: existing?.currentInstallment.toString() ?? '1',
-    );
-    Category selected = existing?.category ?? Category.outros;
-    DateTime startDate = existing?.startDate ?? DateTime.now();
-
-    await showModalBottomSheet(
+  Future<void> _openDialog([InstallmentPlan? existing]) async {
+    final changed = await showDialog<bool>(
       context: context,
-      isScrollControlled: true,
-      builder: (ctx) => Padding(
-        padding: EdgeInsetsGeometry.only(
-          left: 16,
-          right: 16,
-          top: 16,
-          bottom: 16 + MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              existing == null ? 'Novo Parcelamento' : 'Editar Parcelamento',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            SizedBox(height: 12),
-            TextField(
-              controller: descCtrl,
-              decoration: const InputDecoration(labelText: 'Descrição'),
-            ),
-            SizedBox(height: 12),
-            TextField(
-              controller: personCtrl,
-              decoration: const InputDecoration(labelText: 'Pessoa'),
-            ),
-            SizedBox(height: 12),
-            DropdownButtonFormField<Category>(
-              value: selected,
-              items: Category.values
-                  .map((c) => DropdownMenuItem(value: c, child: Text(c.label)))
-                  .toList(),
-              onChanged: (c) => selected = c ?? selected,
-              decoration: const InputDecoration(labelText: 'Categoria'),
-            ),
-            SizedBox(height: 12),
-            TextField(
-              controller: valueCtrl,
-              decoration: InputDecoration(labelText: 'Valor da parcela'),
-              keyboardType: TextInputType.number,
-            ),
-            SizedBox(height: 12),
-            TextField(
-              controller: totalCtrl,
-              decoration: InputDecoration(labelText: 'Total de parcelas'),
-              keyboardType: TextInputType.number,
-            ),
-            SizedBox(height: 12),
-            TextField(
-              controller: currentCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Parcela atual (1 = primeira)',
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            SizedBox(height: 12),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Início: ${DateFormat.yMd('pt_BR').format(startDate)}',
-                  ),
-                ),
-                TextButton(
-                  onPressed: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: startDate,
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime(2100),
-                    );
+      barrierDismissible: true,
+      builder: (_) => InstallmentsDialog(existing: existing, repo: repo),
+    );
+  }
 
-                    if (picked != null) {
-                      setState(() => startDate = picked);
-                    }
-                  },
-                  child: Text('Selecionar'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () async {
-                final value =
-                    double.tryParse(valueCtrl.text.replaceAll(',', ',')) ?? 0;
-                final total = int.tryParse(totalCtrl.text) ?? 0;
-                final current = int.tryParse(currentCtrl.text) ?? 1;
-                if (value <= 0 || total < 0 || descCtrl.text.isEmpty) return;
-                final plan = InstallmentPlan(
-                  id: existing?.id ?? 'temp',
-                  description: descCtrl.text,
-                  category: selected,
-                  person: personCtrl.text.isEmpty ? 'Você' : personCtrl.text,
-                  installmentValue: value,
-                  totalInstallments: total,
-                  currentInstallment: current.clamp(1, total),
-                  startDate: startDate,
-                );
-
-                if (existing == null) {
-                  await repo.addInstallment(plan);
-                } else {
-                  repo.updateInstallment(plan);
-                }
-                Navigator.pop(context);
-                _load();
-              },
-              child: const Text('Salvar'),
-            ),
-            const SizedBox(height: 12),
-          ],
-        ),
+  Future<void> _remove(String id) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Remover parcelamento'),
+        content: const Text('Tem certeza que deseja remover o parcelamento?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Remover'),
+          ),
+        ],
       ),
     );
+    if (confirm == true) {
+      await repo.removeInstallment(id);
+      _load();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (loading)
+    if (loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Parcelamentos')),
-      body: ListView(
-        padding: const EdgeInsets.all(12),
-        children: [
-          ...plans.map((p) {
-            final progress = '${p.currentInstallment}/${p.totalInstallments}';
-            return Card(
-              child: ListTile(
-                title: Text(p.description),
-                subtitle: Text(
-                  '${p.category.label} • ${p.person} • ${progress} • Início: • ${DateFormat.yMd('pt_BR').format(p.startDate)}',
-                ),
-                trailing: Text(currency.format(p.installmentValue)),
-                onTap: () => _addOrEdit(p),
-                onLongPress: () async {
-                  await repo.removeInstallment(p.id);
-                  _load();
-                },
-              ),
-            );
-          }),
-          const SizedBox(height: 64),
-        ],
-      ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _addOrEdit(null),
+        onPressed: () => _openDialog(),
         child: const Icon(Icons.add),
+      ),
+      body: RefreshIndicator(
+        onRefresh: _load,
+        child: ListView(
+          padding: const EdgeInsets.all(12),
+          children: [
+            if (installments.isEmpty)
+              const Padding(
+                padding: EdgeInsets.only(top: 32),
+                child: Center(child: Text('Nennhum parcelamento cadastrado')),
+              ),
+            ...installments.map((plan) {
+              final subtitle = [
+                plan.category.label,
+                plan.person,
+                'Início: ${DateFormat.yMd('pt_BR').format(plan.startDate)}',
+                'Parcela ${plan.currentInstallment}/${plan.totalInstallments}',
+              ].join(' • ');
+
+              return Card(
+                child: ListTile(
+                  isThreeLine: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  title: Text(plan.description),
+                  subtitle: Text(subtitle),
+                  trailing: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      minWidth: 96,
+                      maxWidth: 120,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(currency.format(plan.installmentValue)),
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 4,
+                          runSpacing: 4,
+                          alignment: WrapAlignment.end,
+                          children: [
+                            IconButton(
+                              onPressed: () => _openDialog(plan),
+                              icon: const Icon(Icons.edit, size: 20),
+                              tooltip: 'Editar',
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, size: 20),
+                              onPressed: () => _remove(plan.id),
+                              tooltip: 'Remover',
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
       ),
     );
   }

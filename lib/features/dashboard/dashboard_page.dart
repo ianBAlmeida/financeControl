@@ -6,6 +6,7 @@ import 'package:finance_control/features/summary/category_pie_chart.dart';
 import 'package:finance_control/features/summary/category_totals.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -27,7 +28,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
-    repo = FinanceRepository(LocalStorage());
+    repo = context.read<FinanceRepository>();
     _load();
   }
 
@@ -38,52 +39,59 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Future<void> _load() async {
     setState(() => loading = true);
-    //Força recarregar do storage para pegar alterações feitas em outras telas
-    await repo.reload();
-    final now = DateTime.now();
+    try {
+      await repo.reload();
+      final now = DateTime.now();
 
-    final debits = await repo.getDebits();
-    final credits = await repo.getCredits();
-    final installments = await repo.getInstallments();
-    final initial = await repo.getInitialBalance(now.year, now.month);
+      final debits = await repo.getDebits();
+      final credits = await repo.getCredits();
+      final installments = await repo.getInstallments();
+      final initial = await repo.getInitialBalance(now.year, now.month);
 
-    final debitsMonth = debits.where(
-      (e) => e.date.year == now.year && e.date.month == now.month,
-    );
-    final creditsMonth = credits.where(
-      (e) => e.date.year == now.year && e.date.month == now.month,
-    );
+      final debitsMonth = debits.where(
+        (e) => e.date.year == now.year && e.date.month == now.month,
+      );
+      final creditsMonth = credits.where(
+        (e) => e.date.year == now.year && e.date.month == now.month,
+      );
 
-    final debitSpent = debitsMonth.fold<double>(0, (p, e) => p + e.amount);
-    final creditSpent = creditsMonth.fold<double>(0, (p, e) => p + e.amount);
+      final debitSpent = debitsMonth.fold<double>(0, (p, e) => p + e.amount);
+      final creditSpent = creditsMonth.fold<double>(0, (p, e) => p + e.amount);
 
-    double installmentsThisMonth = 0;
-    final List<InstallmentPlan> installmentsInMonth = [];
-    for (final plan in installments) {
-      final monthsDiff =
-          (now.year - plan.startDate.year) * 12 +
-          (now.month - plan.startDate.month);
-      final current = monthsDiff + 1;
-      if (current >= 1 && current <= plan.totalInstallments) {
-        installmentsThisMonth += plan.installmentValue;
-        installmentsInMonth.add(plan);
+      double installmentsThisMonth = 0;
+      final List<InstallmentPlan> installmentsInMonth = [];
+      for (final plan in installments) {
+        final monthsDiff =
+            (now.year - plan.startDate.year) * 12 +
+            (now.month - plan.startDate.month);
+        final current = monthsDiff + 1;
+        if (current >= 1 && current <= plan.totalInstallments) {
+          installmentsThisMonth += plan.installmentValue;
+          installmentsInMonth.add(plan);
+        }
       }
+
+      final categoryMap = sumByCategory([
+        ...debitsMonth,
+        ...creditsMonth,
+        ...installmentsInMonth,
+      ]);
+
+      setState(() {
+        debitInitial = initial;
+        debitTotalSpent = debitSpent;
+        creditTotalMonth = creditSpent;
+        creditInstallmentsMonth = installmentsThisMonth;
+        categoryTotals = categoryMap;
+        loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => loading = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro ao carregar dashboard: $e')));
     }
-
-    final categoryMap = sumByCategory([
-      ...debitsMonth,
-      ...creditsMonth,
-      ...installmentsInMonth,
-    ]);
-
-    setState(() {
-      debitInitial = initial;
-      debitTotalSpent = debitSpent;
-      creditTotalMonth = creditSpent;
-      creditInstallmentsMonth = installmentsThisMonth;
-      categoryTotals = categoryMap;
-      loading = false;
-    });
   }
 
   @override
@@ -137,16 +145,6 @@ class _DashboardPageState extends State<DashboardPage> {
               runSpacing: 2,
               alignment: WrapAlignment.center,
               children: [
-                _NavChip(
-                  label: 'Débito',
-                  icon: Icons.account_balance_wallet,
-                  onTap: () => context.go('/debit'),
-                ),
-                _NavChip(
-                  label: 'Crédito',
-                  icon: Icons.credit_card,
-                  onTap: () => context.go('/credit'),
-                ),
                 _NavChip(
                   label: 'Parcelas',
                   icon: Icons.payments,

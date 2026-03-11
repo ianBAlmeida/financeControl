@@ -27,14 +27,23 @@ class _CreditPageState extends State<CreditPage> {
 
   Future<void> _load() async {
     setState(() => loading = true);
-    final now = DateTime.now();
-    final list = await repo.getCredits();
-    setState(() {
-      credits = list
-          .where((e) => e.date.year == now.year && e.date.month == now.month)
-          .toList();
-      loading = false;
-    });
+    try {
+      await repo.reload();
+      final now = DateTime.now();
+      final list = await repo.getCredits();
+      setState(() {
+        credits = list
+            .where((e) => e.date.year == now.year && e.date.month == now.month)
+            .toList();
+        loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => loading = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro ao carregar créditos: $e')));
+    }
   }
 
   double get total => credits.fold(0, (p, e) => p + e.amount);

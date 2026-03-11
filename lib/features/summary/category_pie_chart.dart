@@ -20,7 +20,7 @@ class CategoryPieChart extends StatelessWidget {
         color: colors[e.key],
         value: e.value,
         title: '${e.key.label}\n$percent',
-        radius: 80,
+        radius: 98,
         titleStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
       );
     }).toList();
@@ -34,13 +34,13 @@ class CategoryPieChart extends StatelessWidget {
 Map<Category, Color> _categoryColors(BuildContext context) {
   final cs = Theme.of(context).colorScheme;
   return {
-    Category.alimentacao: cs.primary,
-    Category.carro: cs.secondary,
-    Category.cosmetico: cs.tertiary,
-    Category.lazer: cs.error,
-    Category.mercado: cs.surfaceTint,
-    Category.transporte: cs.outline,
-    Category.servico: cs.tertiaryFixedDim,
-    Category.outros: cs.onSurfaceVariant,
+    Category.alimentacao: Colors.redAccent,
+    Category.carro: Colors.blueGrey,
+    Category.cosmetico: Colors.blueGrey,
+    Category.lazer: Colors.black,
+    Category.mercado: Colors.brown,
+    Category.transporte: Colors.pinkAccent,
+    Category.servico: Colors.indigo,
+    Category.outros: Colors.teal,
   };
 }

@@ -70,7 +70,7 @@ class _DebitPageState extends State<DebitPage> {
                   initialBalance;
               final now = DateTime.now();
               await repo.setInitialBalance(now.year, now.month, v);
-              Navigator.pop(ctx);
+              Navigator.pop(context);
               _load();
             },
             child: const Text('Salvar'),
@@ -107,14 +107,17 @@ class _DebitPageState extends State<DebitPage> {
               existing == null ? 'Novo débito' : 'Editar débito',
               style: Theme.of(context).textTheme.titleMedium,
             ),
+            SizedBox(height: 16),
             TextField(
               controller: descCtrl,
               decoration: const InputDecoration(labelText: 'Descrição'),
             ),
+            SizedBox(height: 16),
             TextField(
               controller: personCtrl,
               decoration: const InputDecoration(labelText: 'Pessoa'),
             ),
+            SizedBox(height: 16),
             DropdownButtonFormField<Category>(
               value: selected,
               items: Category.values
@@ -123,10 +126,12 @@ class _DebitPageState extends State<DebitPage> {
               onChanged: (c) => selected = c ?? selected,
               decoration: const InputDecoration(labelText: 'Categoria'),
             ),
+            SizedBox(height: 16),
             TextField(
               controller: amountCtlr,
               decoration: const InputDecoration(labelText: 'Valor'),
             ),
+            SizedBox(height: 16),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -153,6 +158,7 @@ class _DebitPageState extends State<DebitPage> {
             ),
             const SizedBox(height: 12),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(),
               onPressed: () async {
                 final amount =
                     double.tryParse(amountCtlr.text.replaceAll(',', '.')) ?? 0;
@@ -170,7 +176,7 @@ class _DebitPageState extends State<DebitPage> {
                 } else {
                   await repo.updateDebit(entry);
                 }
-                Navigator.pop(ctx);
+                Navigator.pop(context);
                 _load();
               },
               child: const Text('Salvar'),

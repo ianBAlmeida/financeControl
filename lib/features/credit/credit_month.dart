@@ -66,14 +66,17 @@ class _CreditPageState extends State<CreditPage> {
               existing == null ? 'Novo crédito (gasto)' : 'Editar gasto',
               style: Theme.of(context).textTheme.titleMedium,
             ),
+            SizedBox(height: 12),
             TextField(
               controller: descCtrl,
               decoration: const InputDecoration(labelText: 'Descrição'),
             ),
+            SizedBox(height: 12),
             TextField(
               controller: personCtrl,
               decoration: InputDecoration(labelText: 'Pessoa'),
             ),
+            SizedBox(height: 12),
             DropdownButtonFormField<Category>(
               value: selected,
               items: Category.values
@@ -82,11 +85,13 @@ class _CreditPageState extends State<CreditPage> {
               onChanged: (c) => selected = c ?? selected,
               decoration: InputDecoration(labelText: 'Categoria'),
             ),
+            SizedBox(height: 12),
             TextField(
               controller: amountCtrl,
               decoration: const InputDecoration(labelText: 'Valor'),
               keyboardType: TextInputType.number,
             ),
+            SizedBox(height: 12),
             const SizedBox(height: 8),
             Row(
               children: [

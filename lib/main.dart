@@ -16,9 +16,30 @@ class FinanceApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Controle Financeiro',
-      theme: AppTheme.light,
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.light.copyWith(
+        scaffoldBackgroundColor: Colors.transparent,
+        appBarTheme: AppTheme.light.appBarTheme.copyWith(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+      ),
       routerConfig: appRouter,
+      builder: (ctx, child) {
+        return Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color.fromARGB(255, 60, 17, 134),
+                Color.fromARGB(255, 136, 124, 158),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: child,
+        );
+      },
       supportedLocales: const [Locale('pt', 'BR')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,

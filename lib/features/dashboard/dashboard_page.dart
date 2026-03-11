@@ -1,5 +1,9 @@
+import 'package:finance_control/data/category.dart';
 import 'package:finance_control/data/local_storage.dart';
+import 'package:finance_control/data/models.dart';
 import 'package:finance_control/data/repository.dart';
+import 'package:finance_control/features/summary/category_pie_chart.dart';
+import 'package:finance_control/features/summary/category_totals.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -11,6 +15,7 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  Map<Category, double> categoryTotals = {};
   late final FinanceRepository repo;
   bool loading = true;
 
@@ -26,8 +31,15 @@ class _DashboardPageState extends State<DashboardPage> {
     _load();
   }
 
+  Future<void> _openRouteAndRefresh(String path) async {
+    await context.push(path);
+    if (mounted) await _load();
+  }
+
   Future<void> _load() async {
     setState(() => loading = true);
+    //Força recarregar do storage para pegar alterações feitas em outras telas
+    await repo.reload();
     final now = DateTime.now();
 
     final debits = await repo.getDebits();
@@ -46,6 +58,7 @@ class _DashboardPageState extends State<DashboardPage> {
     final creditSpent = creditsMonth.fold<double>(0, (p, e) => p + e.amount);
 
     double installmentsThisMonth = 0;
+    final List<InstallmentPlan> installmentsInMonth = [];
     for (final plan in installments) {
       final monthsDiff =
           (now.year - plan.startDate.year) * 12 +
@@ -53,14 +66,22 @@ class _DashboardPageState extends State<DashboardPage> {
       final current = monthsDiff + 1;
       if (current >= 1 && current <= plan.totalInstallments) {
         installmentsThisMonth += plan.installmentValue;
+        installmentsInMonth.add(plan);
       }
     }
+
+    final categoryMap = sumByCategory([
+      ...debitsMonth,
+      ...creditsMonth,
+      ...installmentsInMonth,
+    ]);
 
     setState(() {
       debitInitial = initial;
       debitTotalSpent = debitSpent;
       creditTotalMonth = creditSpent;
       creditInstallmentsMonth = installmentsThisMonth;
+      categoryTotals = categoryMap;
       loading = false;
     });
   }
@@ -75,7 +96,11 @@ class _DashboardPageState extends State<DashboardPage> {
     final creditInvoice = creditTotalMonth + creditInstallmentsMonth;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Resumo')),
+      appBar: AppBar(
+        centerTitle: true,
+        title: Text('Controle Financeiro'),
+        titleTextStyle: TextStyle(fontSize: 22),
+      ),
       body: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
@@ -86,30 +111,31 @@ class _DashboardPageState extends State<DashboardPage> {
               value: 'R\$ ${debitCurrent.toStringAsFixed(2)}',
               subtitle:
                   'Inicial: R\$ ${debitInitial.toStringAsFixed(2)} • Gasto: R\$ ${debitTotalSpent.toStringAsFixed(2)}',
-              onTap: () => context.go('/debit'),
+              onTap: () => _openRouteAndRefresh('/debit'),
             ),
             _InfoCard(
               title: 'Crédito (gastos mês)',
               value: 'R\$ ${creditTotalMonth.toStringAsFixed(2)}',
               subtitle: 'Gastos avulsos do mês',
-              onTap: () => context.go('/credit'),
+              onTap: () => _openRouteAndRefresh('/credit'),
             ),
             _InfoCard(
               title: 'Parcelas (mês)',
               value: 'R\$ ${creditInstallmentsMonth.toStringAsFixed(2)}',
               subtitle: 'Parcelas que caem este mês',
-              onTap: () => context.go('/installments'),
+              onTap: () => _openRouteAndRefresh('/installments'),
             ),
             _InfoCard(
               title: 'Fatura total (mês)',
               value: 'R\$ ${creditInvoice.toStringAsFixed(2)}',
               subtitle: 'Crédito + parcelas do mês',
-              onTap: () => context.go('/summary'),
+              onTap: () => _openRouteAndRefresh('/summary'),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 40),
             Wrap(
               spacing: 8,
-              runSpacing: 8,
+              runSpacing: 2,
+              alignment: WrapAlignment.center,
               children: [
                 _NavChip(
                   label: 'Débito',
@@ -130,6 +156,11 @@ class _DashboardPageState extends State<DashboardPage> {
                   label: 'Resumo',
                   icon: Icons.assessment,
                   onTap: () => context.go('/summary'),
+                ),
+                const SizedBox(height: 110),
+                SizedBox(
+                  height: 180,
+                  child: CategoryPieChart(totals: categoryTotals),
                 ),
               ],
             ),

@@ -13,7 +13,7 @@ enum Category {
 //rótulo legível
 extension CategoryLabel on Category {
   String get label => switch (this) {
-    Category.alimentacao => 'Alimentação',
+    Category.alimentacao => 'Comida',
     Category.transporte => 'Transporte',
     Category.lazer => 'Lazer',
     Category.carro => 'Carro',

@@ -66,14 +66,17 @@ class _InstallmentsPageState extends State<InstallmentsPage> {
               existing == null ? 'Novo Parcelamento' : 'Editar Parcelamento',
               style: Theme.of(context).textTheme.titleMedium,
             ),
+            SizedBox(height: 12),
             TextField(
               controller: descCtrl,
               decoration: const InputDecoration(labelText: 'Descrição'),
             ),
+            SizedBox(height: 12),
             TextField(
               controller: personCtrl,
               decoration: const InputDecoration(labelText: 'Pessoa'),
             ),
+            SizedBox(height: 12),
             DropdownButtonFormField<Category>(
               value: selected,
               items: Category.values
@@ -82,16 +85,19 @@ class _InstallmentsPageState extends State<InstallmentsPage> {
               onChanged: (c) => selected = c ?? selected,
               decoration: const InputDecoration(labelText: 'Categoria'),
             ),
+            SizedBox(height: 12),
             TextField(
               controller: valueCtrl,
               decoration: InputDecoration(labelText: 'Valor da parcela'),
               keyboardType: TextInputType.number,
             ),
+            SizedBox(height: 12),
             TextField(
               controller: totalCtrl,
               decoration: InputDecoration(labelText: 'Total de parcelas'),
               keyboardType: TextInputType.number,
             ),
+            SizedBox(height: 12),
             TextField(
               controller: currentCtrl,
               decoration: const InputDecoration(
@@ -99,6 +105,7 @@ class _InstallmentsPageState extends State<InstallmentsPage> {
               ),
               keyboardType: TextInputType.number,
             ),
+            SizedBox(height: 12),
             const SizedBox(height: 8),
             Row(
               children: [

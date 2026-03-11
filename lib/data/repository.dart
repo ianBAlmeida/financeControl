@@ -16,6 +16,11 @@ class FinanceRepository {
   List<MonthlyBalance> _balances = [];
   bool _loaded = false;
 
+  Future<void> reload() async {
+    _loaded = false;
+    await ensureLoaded();
+  }
+
   //Garante que os dados foram carregados uma vez
   Future<void> ensureLoaded() async {
     if (_loaded) return;

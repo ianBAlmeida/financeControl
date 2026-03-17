@@ -1,5 +1,5 @@
 import 'package:finance_control/app_router.dart';
-import 'package:finance_control/app_theme.dart';
+import 'package:finance_control/shared/app_theme.dart';
 import 'package:finance_control/data/local_storage.dart';
 import 'package:finance_control/data/repository.dart';
 import 'package:flutter/material.dart';

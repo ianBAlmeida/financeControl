@@ -2,6 +2,7 @@ import 'package:finance_control/data/category.dart';
 import 'package:finance_control/data/local_storage.dart';
 import 'package:finance_control/data/models.dart';
 import 'package:finance_control/data/repository.dart';
+import 'package:finance_control/features/credit/credit_month_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -49,111 +50,41 @@ class _CreditPageState extends State<CreditPage> {
   double get total => credits.fold(0, (p, e) => p + e.amount);
 
   Future<void> _addOrEdit({CreditEntry? existing}) async {
-    final now = existing?.date ?? DateTime.now();
-    final descCtrl = TextEditingController(text: existing?.description ?? '');
-    final personCtrl = TextEditingController(text: existing?.person ?? '');
-    final amountCtrl = TextEditingController(
-      text: existing?.amount.toString() ?? '',
-    );
-    Category selected = existing?.category ?? Category.outros;
-    DateTime selecteDate = now;
-
-    await showModalBottomSheet(
+    final changed = await showDialog<bool>(
       context: context,
-      isScrollControlled: true,
-      builder: (ctx) => Padding(
-        padding: EdgeInsetsGeometry.only(
-          left: 16,
-          right: 16,
-          top: 16,
-          bottom: 16 + MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              existing == null ? 'Novo crédito (gasto)' : 'Editar gasto',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            SizedBox(height: 12),
-            TextField(
-              controller: descCtrl,
-              decoration: const InputDecoration(labelText: 'Descrição'),
-            ),
-            SizedBox(height: 12),
-            TextField(
-              controller: personCtrl,
-              decoration: InputDecoration(labelText: 'Pessoa'),
-            ),
-            SizedBox(height: 12),
-            DropdownButtonFormField<Category>(
-              value: selected,
-              items: Category.values
-                  .map((c) => DropdownMenuItem(value: c, child: Text(c.label)))
-                  .toList(),
-              onChanged: (c) => selected = c ?? selected,
-              decoration: InputDecoration(labelText: 'Categoria'),
-            ),
-            SizedBox(height: 12),
-            TextField(
-              controller: amountCtrl,
-              decoration: const InputDecoration(labelText: 'Valor'),
-              keyboardType: TextInputType.number,
-            ),
-            SizedBox(height: 12),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Data: ${DateFormat.yMd('pt_BR').format(selecteDate)}',
-                  ),
-                ),
-                TextButton(
-                  onPressed: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: selecteDate,
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime(2100),
-                    );
-                    if (picked != null) {
-                      setState(() => selecteDate = picked);
-                    }
-                  },
-                  child: const Text('Selecionar'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () async {
-                final amount =
-                    double.tryParse(amountCtrl.text.replaceAll(',', '.')) ?? 0;
-                if (amount <= 0 || descCtrl.text.isEmpty) return;
-                final entry = CreditEntry(
-                  id: existing?.id ?? 'temp',
-                  date: selecteDate,
-                  description: descCtrl.text,
-                  category: selected,
-                  person: personCtrl.text.isEmpty ? 'Você' : personCtrl.text,
-                  amount: amount,
-                );
-                if (existing == null) {
-                  await repo.addCredit(entry);
-                } else {
-                  await repo.updateCredit(entry);
-                }
-                Navigator.pop(context);
-                _load();
-              },
-              child: const Text('Salvar'),
-            ),
-            const SizedBox(height: 12),
-          ],
-        ),
+      barrierDismissible: true,
+      barrierColor: Colors.black.withValues(alpha: 0.35),
+      builder: (_) => CreditMonthDialog(existing: existing, repo: repo),
+    );
+
+    if (changed == true) {
+      _load();
+    }
+  }
+
+  Future<void> _removeCredit(String id) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Remover crédito'),
+        content: const Text('Tem certeza que deseja remover esse lançamento?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Remover'),
+          ),
+        ],
       ),
     );
+
+    if (confirm == true) {
+      await repo.removeCredit(id);
+      _load();
+    }
   }
 
   @override
@@ -180,10 +111,7 @@ class _CreditPageState extends State<CreditPage> {
                 ),
                 trailing: Text(currency.format(c.amount)),
                 onTap: () => _addOrEdit(existing: c),
-                onLongPress: () async {
-                  await repo.removeCredit(c.id);
-                  _load();
-                },
+                onLongPress: () => _removeCredit(c.id),
               ),
             ),
           ),

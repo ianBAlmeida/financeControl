@@ -50,6 +50,10 @@ class _InstallmentsPageState extends State<InstallmentsPage> {
       barrierDismissible: true,
       builder: (_) => InstallmentsDialog(existing: existing, repo: repo),
     );
+
+    if (changed == true) {
+      _load();
+    }
   }
 
   Future<void> _remove(String id) async {

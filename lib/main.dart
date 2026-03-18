@@ -25,13 +25,7 @@ class FinanceApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light.copyWith(
-        scaffoldBackgroundColor: Colors.transparent,
-        appBarTheme: AppTheme.light.appBarTheme.copyWith(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-        ),
-      ),
+      theme: AppTheme.dark(),
       routerConfig: appRouter,
       builder: (ctx, child) {
         return Container(

@@ -2,7 +2,8 @@ import 'package:finance_control/data/category.dart';
 import 'package:finance_control/data/local_storage.dart';
 import 'package:finance_control/data/models.dart';
 import 'package:finance_control/data/repository.dart';
-import 'package:finance_control/features/balance/debit_dialog.dart';
+import 'package:finance_control/features/debit/debit_dialog.dart';
+import 'package:finance_control/shared/utils/input_parses.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -77,9 +78,9 @@ class _DebitPageState extends State<DebitPage> {
           ),
           TextButton(
             onPressed: () async {
-              final v =
-                  double.tryParse(controller.text.replaceAll(',', '.')) ??
-                  initialBalance;
+              final parsed = parsePtBrToDouble(controller.text);
+              final v = parsed > 0 ? parsed : initialBalance;
+              initialBalance;
               final now = DateTime.now();
               await repo.setInitialBalance(now.year, now.month, v);
               Navigator.pop(context);

@@ -1,3 +1,4 @@
+import 'package:finance_control/features/history/monthly_summary.dart';
 import 'package:uuid/uuid.dart';
 import 'local_storage.dart';
 import 'models.dart';
@@ -134,5 +135,37 @@ class FinanceRepository {
       ];
     }
     await _storage.saveBalances(_balances);
+  }
+
+  Future<MonthlySummary> getMonthlySummary(int year, int month) async {
+    await ensureLoaded();
+
+    final initial = await getInitialBalance(year, month);
+
+    final debitTotal = _debits
+        .where((e) => e.date.year == year && e.date.month == month)
+        .fold<double>(0, (p, e) => p + e.amount);
+
+    final crefitTotal = _credits
+        .where((e) => e.date.year == year && e.date.month == month)
+        .fold<double>(0, (p, e) => p + e.amount);
+
+    final installmentsTotal = _installments
+        .where((e) {
+          final start = DateTime(e.startDate.year, e.startDate.month);
+          final target = DateTime(year, month);
+          final diffMonths = (target.year) * 12 + (target.month - start.month);
+          return diffMonths >= 0 && diffMonths < e.totalInstallments;
+        })
+        .fold<double>(0, (p, e) => p + e.installmentValue);
+
+    return MonthlySummary(
+      year: year,
+      month: month,
+      initialBalance: initial,
+      debitTotal: debitTotal,
+      creditTotal: crefitTotal,
+      installmentsTotal: installmentsTotal,
+    );
   }
 }

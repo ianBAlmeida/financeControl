@@ -1,6 +1,8 @@
 import 'package:finance_control/data/category.dart';
 import 'package:finance_control/data/models.dart';
 import 'package:finance_control/data/repository.dart';
+import 'package:finance_control/shared/utils/expense_validators.dart';
+import 'package:finance_control/shared/utils/input_parses.dart';
 import 'package:finance_control/shared/widgets/category_dropdown_field.dart';
 import 'package:finance_control/shared/widgets/expense_dialog.dart';
 import 'package:flutter/material.dart';
@@ -61,14 +63,18 @@ class _CreditMonthDialogState extends State<CreditMonthDialog> {
   }
 
   Future<void> _save() async {
-    final value = double.tryParse(valueCtrl.text.replaceAll(',', '.')) ?? 0;
-    if (value <= 0 || descCtrl.text.trim().isEmpty) {
+    final value = parsePtBrToDouble(valueCtrl.text);
+
+    final descError = validateDescription(descCtrl.text);
+    final valueError = validatePositiveAmount(value);
+
+    final message = descError ?? valueError ?? 'Dados inválidos';
+
+    if (descError != null || valueError != null) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Preencha a descrição e valor corretamente'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
       return;
     }
 

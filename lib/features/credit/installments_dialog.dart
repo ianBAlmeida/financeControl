@@ -1,6 +1,8 @@
 import 'package:finance_control/data/category.dart';
 import 'package:finance_control/data/models.dart';
 import 'package:finance_control/data/repository.dart';
+import 'package:finance_control/shared/utils/expense_validators.dart';
+import 'package:finance_control/shared/utils/input_parses.dart';
 import 'package:finance_control/shared/widgets/category_dropdown_field.dart';
 import 'package:finance_control/shared/widgets/expense_dialog.dart';
 import 'package:flutter/material.dart';
@@ -68,10 +70,24 @@ class _InstallmentsDialogState extends State<InstallmentsDialog> {
   }
 
   Future<void> _save() async {
-    final value = double.tryParse(valueCtrl.text.replaceAll(',', '.')) ?? 0;
     final total = int.tryParse(totalCtrl.text) ?? 0;
-    final current = int.tryParse(currentCtrl.text) ?? 1;
-    if (value <= 0 || total <= 0 || descCtrl.text.isEmpty) return;
+    final current = int.tryParse(currentCtrl.text) ?? 0;
+
+    final value = parsePtBrToDouble(valueCtrl.text);
+
+    final descError = validateDescription(descCtrl.text);
+    final valueError = validatePositiveAmount(value);
+    final installmentError = validateIntallmentRange(current, total);
+
+    final message =
+        descError ?? valueError ?? installmentError ?? 'Dados inválidos';
+
+    if (descError != null || valueError != null || installmentError != null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    }
 
     final plan = InstallmentPlan(
       id: widget.existing?.id ?? 'temp',
@@ -132,7 +148,7 @@ class _InstallmentsDialogState extends State<InstallmentsDialog> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(width: 12),
               Expanded(
                 child: TextField(
                   controller: currentCtrl,
@@ -142,7 +158,7 @@ class _InstallmentsDialogState extends State<InstallmentsDialog> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(width: 12),
           Row(
             children: [
               Expanded(

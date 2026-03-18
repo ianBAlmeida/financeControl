@@ -104,6 +104,7 @@ class _DebitDialogState extends State<DebitDialog> {
             controller: descCtrl,
             decoration: const InputDecoration(labelText: 'Descrição'),
           ),
+          const SizedBox(height: 12),
           TextField(
             controller: personCtrl,
             decoration: const InputDecoration(labelText: 'Pessoa'),
@@ -113,6 +114,7 @@ class _DebitDialogState extends State<DebitDialog> {
             value: selected,
             onChanged: (v) => setState(() => selected = v),
           ),
+          const SizedBox(height: 12),
           TextField(
             controller: valueCtrl,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),

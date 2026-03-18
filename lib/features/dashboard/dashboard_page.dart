@@ -155,6 +155,11 @@ class _DashboardPageState extends State<DashboardPage> {
                   icon: Icons.assessment,
                   onTap: () => context.go('/summary'),
                 ),
+                _NavChip(
+                  label: 'Histórico',
+                  icon: Icons.calendar_month,
+                  onTap: () => context.go('/history'),
+                ),
                 const SizedBox(height: 110),
                 SizedBox(
                   height: 180,

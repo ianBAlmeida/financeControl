@@ -168,4 +168,54 @@ class FinanceRepository {
       installmentsTotal: installmentsTotal,
     );
   }
+
+  Future<MonthlySummary> getRangeSummary(DateTime start, DateTime end) async {
+    await ensureLoaded();
+
+    bool inRange(DateTime d) => !d.isBefore(start) && !d.isAfter(end);
+
+    final debitTotal = _debits
+        .where((e) => inRange(e.date))
+        .fold<double>(0, (p, e) => p + e.amount);
+
+    final creditTotal = _credits
+        .where((e) => inRange(e.date))
+        .fold<double>(0, (p, e) => p + e.amount);
+
+    final installmentTotal = _installments
+        .where((p) {
+          for (int i = 0; i < p.totalInstallments; i++) {
+            final due = DateTime(
+              p.startDate.year,
+              p.startDate.month,
+              p.startDate.day,
+            );
+            if (inRange(due)) return true;
+          }
+          return false;
+        })
+        .fold<double>(0, (sum, p) {
+          int count = 0;
+          for (int i = 0; i < p.totalInstallments; i++) {
+            final due = DateTime(
+              p.startDate.year,
+              p.startDate.month,
+              p.startDate.day,
+            );
+            if (inRange(due)) count++;
+          }
+          return sum + (count * p.installmentValue);
+        });
+
+    final initial = await getInitialBalance(start.year, start.month);
+
+    return MonthlySummary(
+      year: start.year,
+      month: start.month,
+      initialBalance: initial,
+      debitTotal: debitTotal,
+      creditTotal: creditTotal,
+      installmentsTotal: installmentTotal,
+    );
+  }
 }

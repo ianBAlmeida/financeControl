@@ -2,6 +2,7 @@ import 'package:finance_control/features/debit/debit_page.dart';
 import 'package:finance_control/features/credit/installments_page.dart';
 import 'package:finance_control/features/dashboard/dashboard_page.dart';
 import 'package:finance_control/features/credit/credit_month.dart';
+import 'package:finance_control/features/history/history_page.dart';
 import 'package:finance_control/features/summary/summary_page.dart';
 import 'package:go_router/go_router.dart';
 
@@ -23,6 +24,10 @@ final appRouter = GoRouter(
         GoRoute(
           path: 'summary',
           builder: (context, state) => const SummaryPage(),
+        ),
+        GoRoute(
+          path: 'history',
+          builder: (context, state) => const HistoryPage(),
         ),
       ],
     ),

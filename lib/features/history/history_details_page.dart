@@ -1,6 +1,5 @@
 import 'package:finance_control/data/category.dart';
 import 'package:finance_control/data/local_storage.dart';
-import 'package:finance_control/data/models.dart';
 import 'package:finance_control/data/repository.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';

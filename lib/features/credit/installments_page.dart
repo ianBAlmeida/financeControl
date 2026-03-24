@@ -1,10 +1,11 @@
 import 'package:finance_control/data/category.dart';
-import 'package:finance_control/data/local_storage.dart';
 import 'package:finance_control/data/models.dart';
 import 'package:finance_control/data/repository.dart';
 import 'package:finance_control/features/credit/installments_dialog.dart';
+import 'package:finance_control/shared/state/date_filter_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 class InstallmentsPage extends StatefulWidget {
   const InstallmentsPage({super.key});
@@ -15,184 +16,116 @@ class InstallmentsPage extends StatefulWidget {
 
 class _InstallmentsPageState extends State<InstallmentsPage> {
   late final FinanceRepository repo;
-  List<InstallmentPlan> installments = [];
   bool loading = true;
+  List<InstallmentPlan> plans = [];
   final currency = NumberFormat.simpleCurrency(locale: 'pt_BR');
 
   @override
   void initState() {
     super.initState();
-    repo = FinanceRepository(LocalStorage());
+    repo = context.read<FinanceRepository>();
     _load();
   }
 
   Future<void> _load() async {
-    setState(() => loading = true);
     try {
+      setState(() => loading = true);
       await repo.reload();
-      final list = await repo.getInstallments();
+      final all = await repo.getInstallments();
+
+      if (!mounted) return;
       setState(() {
-        installments = list;
+        plans = all;
         loading = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() => loading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Erro ao carregar parcelas: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao carregar parcelamentos: $e')),
+      );
     }
   }
 
-  Future<void> _openDialog([InstallmentPlan? existing]) async {
+  Future<void> _addOrEdit({InstallmentPlan? existing}) async {
     final changed = await showDialog<bool>(
       context: context,
-      barrierDismissible: true,
       builder: (_) => InstallmentsDialog(existing: existing, repo: repo),
     );
-
-    if (changed == true) {
-      _load();
-    }
+    if (changed == true) _load();
   }
 
   Future<void> _remove(String id) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Remover parcelamento'),
-        content: const Text('Tem certeza que deseja remover o parcelamento?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Remover'),
-          ),
-        ],
-      ),
-    );
-    if (confirm == true) {
-      await repo.removeInstallment(id);
-      _load();
-    }
+    await repo.removeInstallment(id);
+    _load();
   }
 
   @override
   Widget build(BuildContext context) {
+    final filter = context.watch<DateFilterController>();
+    final start = filter.effectiveStart;
+    final end = filter.effectiveEnd;
+
+    bool inRange(DateTime d) => !d.isBefore(start) && !d.isAfter(end);
+
+    double periodTotal = 0;
+    final visible = <InstallmentPlan>[];
+
+    for (final p in plans) {
+      bool hasInPeriod = false;
+      for (int i = 0; i < p.totalInstallments; i++) {
+        final due = DateTime(
+          p.startDate.year,
+          p.startDate.month + i,
+          p.startDate.day,
+        );
+        if (inRange(due)) {
+          hasInPeriod = true;
+          periodTotal += p.installmentValue;
+        }
+      }
+      if (hasInPeriod) visible.add(p);
+    }
+
     if (loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
       appBar: AppBar(title: const Text('Parcelamentos')),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openDialog(),
-        child: const Icon(Icons.add),
-      ),
-      body: RefreshIndicator(
-        onRefresh: _load,
-        child: ListView(
-          padding: const EdgeInsets.all(12),
-          children: [
-            if (installments.isEmpty)
-              const Padding(
-                padding: EdgeInsets.only(top: 32),
-                child: Center(child: Text('Nennhum parcelamento cadastrado')),
-              ),
-            ...installments.map((plan) {
-              final subtitle = [
-                plan.category.label,
-                plan.person,
-                'Início: ${DateFormat.yMd('pt_BR').format(plan.startDate)}',
-                'Parcela ${plan.currentInstallment}/${plan.totalInstallments}',
-              ].join(' • ');
-
-              return Card(
-                child: Padding(
-                  padding: const EdgeInsetsGeometry.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              plan.description,
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              subtitle,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(
-                          minWidth: 90,
-                          maxWidth: 110,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              currency.format(plan.installmentValue),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.titleSmall
-                                  ?.copyWith(fontWeight: FontWeight.w700),
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                InkWell(
-                                  borderRadius: BorderRadius.circular(20),
-                                  onTap: () => _openDialog(plan),
-                                  child: const Padding(
-                                    padding: EdgeInsetsGeometry.all(6),
-                                    child: Icon(Icons.edit, size: 18),
-                                  ),
-                                ),
-                                InkWell(
-                                  borderRadius: BorderRadius.circular(20),
-                                  onTap: () => _remove(plan.id),
-                                  child: const Padding(
-                                    padding: EdgeInsetsGeometry.all(6),
-                                    child: Icon(Icons.delete, size: 18),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+      body: ListView(
+        padding: const EdgeInsets.all(12),
+        children: [
+          Text('Filtro: ${filter.labelPtBr()}'),
+          const SizedBox(height: 8),
+          Card(
+            child: ListTile(
+              title: const Text('Total de parcelas no período'),
+              trailing: Text(currency.format(periodTotal)),
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...visible.map(
+            (p) => Card(
+              child: ListTile(
+                title: Text(p.description),
+                subtitle: Text(
+                  '${p.category.label} - ${p.person}\n'
+                  'Início: ${DateFormat.yMd('pt_BR').format(p.startDate)} • ${p.currentInstallment}/${p.totalInstallments}',
                 ),
-              );
-            }),
-          ],
-        ),
+                isThreeLine: true,
+                trailing: Text(currency.format(p.installmentValue)),
+                onTap: () => _addOrEdit(existing: p),
+                onLongPress: () => _remove(p.id),
+              ),
+            ),
+          ),
+          const SizedBox(height: 64),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _addOrEdit(),
+        child: const Icon(Icons.add),
       ),
     );
   }

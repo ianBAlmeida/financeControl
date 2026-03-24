@@ -33,10 +33,10 @@ class CategoryPieChart extends StatelessWidget {
 
 Map<Category, Color> _categoryColors(BuildContext context) {
   return {
-    Category.alimentacao: Colors.redAccent,
-    Category.carro: Colors.blueGrey,
+    Category.alimentacao: const Color.fromARGB(255, 6, 105, 14),
+    Category.carro: const Color.fromARGB(255, 83, 124, 7),
     Category.cosmetico: Colors.blueGrey,
-    Category.lazer: Colors.black,
+    Category.lazer: const Color.fromARGB(255, 150, 16, 16),
     Category.mercado: Colors.brown,
     Category.transporte: Colors.pinkAccent,
     Category.servico: Colors.indigo,

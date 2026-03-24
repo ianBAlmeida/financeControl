@@ -1,12 +1,13 @@
+import 'package:finance_control/data/category.dart';
+import 'package:finance_control/data/models.dart';
+import 'package:finance_control/data/repository.dart';
+import 'package:finance_control/features/summary/category_totals.dart';
+import 'package:finance_control/shared/state/date_filter_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../data/repository.dart';
-import '../../data/local_storage.dart';
-import '../../data/models.dart';
-import '../summary/category_totals.dart';
-import '../../data/category.dart';
+import 'package:provider/provider.dart';
 
-// Tela de resumo geral
+// Tela de resumo geral (integrada ao filtro global)
 class SummaryPage extends StatefulWidget {
   const SummaryPage({super.key});
 
@@ -16,6 +17,7 @@ class SummaryPage extends StatefulWidget {
 
 class _SummaryPageState extends State<SummaryPage> {
   late final FinanceRepository repo;
+
   bool loading = true;
   String? errorMessage;
 
@@ -23,16 +25,59 @@ class _SummaryPageState extends State<SummaryPage> {
   double debitSpent = 0;
   double creditSpent = 0;
   double creditInstallments = 0;
+
   Map<String, double> creditByPerson = {};
   Map<String, double> creditByPersonWithInstallments = {};
   Map<Category, double> categoryTotals = {};
+
   final currency = NumberFormat.simpleCurrency(locale: 'pt_BR');
+  final dateFmt = DateFormat.yMd('pt_BR');
 
   @override
   void initState() {
     super.initState();
-    repo = FinanceRepository(LocalStorage());
+    repo = context.read<FinanceRepository>();
     _load();
+  }
+
+  Future<void> _pickMonth(DateFilterController filter) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: filter.selectedMonth,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      locale: const Locale('pt', 'BR'),
+      helpText: 'Selecionar mês',
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
+    );
+
+    if (picked != null) {
+      filter.setMonth(picked);
+      _load();
+    }
+  }
+
+  Future<void> _pickRange(DateFilterController filter) async {
+    final start = filter.rangeStart ?? filter.effectiveStart;
+    final end = filter.rangeEnd ?? filter.effectiveEnd;
+
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      locale: const Locale('pt', 'BR'),
+      initialDateRange: DateTimeRange(
+        start: start,
+        end: end.isBefore(start) ? start : end,
+      ),
+      helpText: 'Selecionar período',
+      saveText: 'Aplicar',
+    );
+
+    if (picked != null) {
+      filter.setRange(picked.start, picked.end);
+      _load();
+    }
   }
 
   Future<void> _load() async {
@@ -40,73 +85,103 @@ class _SummaryPageState extends State<SummaryPage> {
       loading = true;
       errorMessage = null;
     });
+
     try {
       await repo.reload();
 
-      final now = DateTime.now();
+      final filter = context.read<DateFilterController>();
+      final start = filter.effectiveStart;
+      final end = filter.effectiveEnd;
+
+      bool inRange(DateTime d) => !d.isBefore(start) && !d.isAfter(end);
+
       final debits = await repo.getDebits();
       final credits = await repo.getCredits();
       final installments = await repo.getInstallments();
-      final initial = await repo.getInitialBalance(now.year, now.month);
+      final initial = await repo.getInitialBalance(start.year, start.month);
 
-      final debitsMonth = debits.where(
-        (e) => e.date.year == now.year && e.date.month == now.month,
-      );
-      final creditsMonth = credits.where(
-        (e) => e.date.year == now.year && e.date.month == now.month,
-      );
+      final debitsPeriod = debits.where((e) => inRange(e.date)).toList();
+      final creditsPeriod = credits.where((e) => inRange(e.date)).toList();
 
-      final debitSpentLocal = debitsMonth.fold<double>(
+      final debitSpentLocal = debitsPeriod.fold<double>(
         0,
         (p, e) => p + e.amount,
       );
-      final creditSpentLocal = creditsMonth.fold<double>(
+      final creditSpentLocal = creditsPeriod.fold<double>(
         0,
         (p, e) => p + e.amount,
       );
 
-      double installmentsThisMonth = 0;
-      final List<InstallmentPlan> installmentsInMonth = [];
+      double installmentsInPeriod = 0;
+      final List<InstallmentPlan> installmentsForCategory = [];
+      final List<InstallmentPlan> installmentsOccurrences = [];
+
       for (final plan in installments) {
-        final monthsDiff =
-            (now.year - plan.startDate.year) * 12 +
-            (now.month - plan.startDate.month);
-        final current = monthsDiff + 1;
-        if (current >= 1 && current <= plan.totalInstallments) {
-          installmentsThisMonth += plan.installmentValue;
-          installmentsInMonth.add(plan);
+        bool hasAny = false;
+
+        for (int i = 0; i < plan.totalInstallments; i++) {
+          final due = DateTime(
+            plan.startDate.year,
+            plan.startDate.month + i,
+            plan.startDate.day,
+          );
+
+          if (inRange(due)) {
+            installmentsInPeriod += plan.installmentValue;
+            hasAny = true;
+
+            // ocorrência "virtual" para somar por pessoa corretamente por parcela no período
+            installmentsOccurrences.add(
+              InstallmentPlan(
+                id: plan.id,
+                description: plan.description,
+                category: plan.category,
+                person: plan.person,
+                installmentValue: plan.installmentValue,
+                totalInstallments: plan.totalInstallments,
+                currentInstallment: i + 1,
+                startDate: due,
+              ),
+            );
+          }
+        }
+
+        if (hasAny) {
+          installmentsForCategory.add(plan);
         }
       }
 
-      Map<String, double> byPerson = {};
-      for (final c in creditsMonth) {
+      // crédito avulso por pessoa
+      final Map<String, double> byPerson = {};
+      for (final c in creditsPeriod) {
         byPerson[c.person] = (byPerson[c.person] ?? 0) + c.amount;
       }
 
-      Map<String, double> byPersonWithInst = {...byPerson};
-      for (final p in installmentsInMonth) {
+      // crédito + parcelas (por ocorrência no período)
+      final Map<String, double> byPersonWithInst = {...byPerson};
+      for (final p in installmentsOccurrences) {
         byPersonWithInst[p.person] =
             (byPersonWithInst[p.person] ?? 0) + p.installmentValue;
       }
 
       final categoryMap = sumByCategory([
-        ...debitsMonth,
-        ...creditsMonth,
-        ...installmentsInMonth,
+        ...debitsPeriod,
+        ...creditsPeriod,
+        ...installmentsForCategory,
       ]);
 
+      if (!mounted) return;
       setState(() {
         debitInitial = initial;
         debitSpent = debitSpentLocal;
         creditSpent = creditSpentLocal;
-        creditInstallments = installmentsThisMonth;
+        creditInstallments = installmentsInPeriod;
         creditByPerson = byPerson;
         creditByPersonWithInstallments = byPersonWithInst;
         categoryTotals = categoryMap;
         loading = false;
       });
     } catch (e) {
-      // Se der erro, libera o loading e mostra mensagem
       if (!mounted) return;
       setState(() {
         loading = false;
@@ -120,8 +195,11 @@ class _SummaryPageState extends State<SummaryPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (loading)
+    final filter = context.watch<DateFilterController>();
+
+    if (loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     final debitCurrent = debitInitial - debitSpent;
     final creditInvoice = creditSpent + creditInstallments;
@@ -134,6 +212,40 @@ class _SummaryPageState extends State<SummaryPage> {
         child: ListView(
           padding: const EdgeInsets.all(12),
           children: [
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ChoiceChip(
+                  label: const Text('Mês'),
+                  selected: !filter.useRange,
+                  onSelected: (_) {
+                    filter.setUseRange(false);
+                    _load();
+                  },
+                ),
+                ChoiceChip(
+                  label: const Text('Período'),
+                  selected: filter.useRange,
+                  onSelected: (_) {
+                    filter.setUseRange(true);
+                    _load();
+                  },
+                ),
+                ActionChip(
+                  avatar: const Icon(Icons.date_range, size: 18),
+                  label: Text(
+                    filter.useRange ? 'Alterar período' : 'Alterar mês',
+                  ),
+                  onPressed: () =>
+                      filter.useRange ? _pickRange(filter) : _pickMonth(filter),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text('Filtro: ${filter.labelPtBr()}'),
+            const SizedBox(height: 12),
+
             if (errorMessage != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
@@ -142,30 +254,54 @@ class _SummaryPageState extends State<SummaryPage> {
                   style: const TextStyle(color: Colors.red),
                 ),
               ),
+
             _sectionTitle('Débito'),
-            _infoRow('Saldo inicial', debitInitial),
-            _infoRow('Gasto débito', debitSpent),
-            _infoRow('Saldo atual', debitCurrent),
+            _cardInfo('Saldo inicial', debitInitial),
+            _cardInfo('Gasto débito', debitSpent),
+            _cardInfo('Saldo atual', debitCurrent),
             const SizedBox(height: 12),
 
             _sectionTitle('Crédito'),
-            _infoRow('Gastos do mês', creditSpent),
-            _infoRow('Parcelas do mês', creditInstallments),
-            _infoRow('Fatura total (mês)', creditInvoice),
+            _cardInfo(
+              filter.useRange ? 'Gastos do período' : 'Gastos do mês',
+              creditSpent,
+            ),
+            _cardInfo(
+              filter.useRange ? 'Parcelas do período' : 'Parcelas do mês',
+              creditInstallments,
+            ),
+            _cardInfo(
+              filter.useRange ? 'Fatura total (período)' : 'Fatura total (mês)',
+              creditInvoice,
+            ),
             const SizedBox(height: 12),
 
             _sectionTitle('Resumo geral'),
-            _infoRow('Saldo projetado (débito - fatura)', projected),
+            _cardInfo('Saldo projetado (débito - fatura)', projected),
             const SizedBox(height: 12),
 
-            _sectionTitle('Crédito por pessoa (mês)'),
-            ...creditByPerson.entries.map((e) => _infoRow(e.key, e.value)),
+            _sectionTitle(
+              filter.useRange
+                  ? 'Crédito por pessoa (período)'
+                  : 'Crédito por pessoa (mês)',
+            ),
+            if (creditByPerson.isEmpty)
+              const Text('Sem lançamentos no filtro atual.')
+            else
+              ...creditByPerson.entries.map((e) => _infoRow(e.key, e.value)),
             const SizedBox(height: 8),
 
-            _sectionTitle('Crédito + parcelas por pessoa (mês)'),
-            ...creditByPersonWithInstallments.entries.map(
-              (e) => _infoRow(e.key, e.value),
+            _sectionTitle(
+              filter.useRange
+                  ? 'Crédito + parcelas por pessoa (período)'
+                  : 'Crédito + parcelas por pessoa (mês)',
             ),
+            if (creditByPersonWithInstallments.isEmpty)
+              const Text('Sem lançamentos no filtro atual.')
+            else
+              ...creditByPersonWithInstallments.entries.map(
+                (e) => _infoRow(e.key, e.value),
+              ),
             const SizedBox(height: 12),
           ],
         ),
@@ -175,8 +311,17 @@ class _SummaryPageState extends State<SummaryPage> {
 
   Widget _sectionTitle(String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Text(text, style: Theme.of(context).textTheme.titleMedium),
+    );
+  }
+
+  Widget _cardInfo(String label, double value) {
+    return Card(
+      child: ListTile(
+        title: Text(label),
+        trailing: Text(currency.format(value)),
+      ),
     );
   }
 

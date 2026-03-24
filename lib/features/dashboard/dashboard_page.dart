@@ -1,11 +1,12 @@
 import 'package:finance_control/data/category.dart';
-import 'package:finance_control/data/local_storage.dart';
 import 'package:finance_control/data/models.dart';
 import 'package:finance_control/data/repository.dart';
 import 'package:finance_control/features/summary/category_pie_chart.dart';
 import 'package:finance_control/features/summary/category_totals.dart';
+import 'package:finance_control/shared/state/date_filter_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -22,8 +23,11 @@ class _DashboardPageState extends State<DashboardPage> {
 
   double debitInitial = 0;
   double debitTotalSpent = 0;
-  double creditTotalMonth = 0;
-  double creditInstallmentsMonth = 0;
+  double creditTotalPeriod = 0;
+  double creditInstallmentsPeriod = 0;
+
+  final dateFmt = DateFormat.yMd('pt_BR');
+  final monthFmt = DateFormat.yMMMM('pt_BR');
 
   @override
   void initState() {
@@ -37,51 +41,106 @@ class _DashboardPageState extends State<DashboardPage> {
     if (mounted) await _load();
   }
 
+  Future<void> _pickMonth(DateFilterController filter) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: filter.selectedMonth,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      locale: const Locale('pt', 'BR'),
+      helpText: 'Selecionar mês',
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
+    );
+
+    if (picked != null) {
+      filter.setMonth(picked); // global
+      _load();
+    }
+  }
+
+  Future<void> _pickRange(DateFilterController filter) async {
+    final start = filter.rangeStart ?? filter.effectiveStart;
+    final end = filter.rangeEnd ?? filter.effectiveEnd;
+
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      locale: const Locale('pt', 'BR'),
+      initialDateRange: DateTimeRange(
+        start: start,
+        end: end.isBefore(start) ? start : end,
+      ),
+      helpText: 'Selecionar período',
+      saveText: 'Aplicar',
+    );
+
+    if (picked != null) {
+      filter.setRange(picked.start, picked.end); // global
+      _load();
+    }
+  }
+
   Future<void> _load() async {
     setState(() => loading = true);
     try {
       await repo.reload();
-      final now = DateTime.now();
+
+      final filter = context.read<DateFilterController>();
+      final start = filter.effectiveStart;
+      final end = filter.effectiveEnd;
+
+      bool inRange(DateTime d) => !d.isBefore(start) && !d.isAfter(end);
 
       final debits = await repo.getDebits();
       final credits = await repo.getCredits();
       final installments = await repo.getInstallments();
-      final initial = await repo.getInitialBalance(now.year, now.month);
 
-      final debitsMonth = debits.where(
-        (e) => e.date.year == now.year && e.date.month == now.month,
-      );
-      final creditsMonth = credits.where(
-        (e) => e.date.year == now.year && e.date.month == now.month,
-      );
+      // CORREÇÃO: start.month
+      final initial = await repo.getInitialBalance(start.year, start.month);
 
-      final debitSpent = debitsMonth.fold<double>(0, (p, e) => p + e.amount);
-      final creditSpent = creditsMonth.fold<double>(0, (p, e) => p + e.amount);
+      final debitsPeriod = debits.where((e) => inRange(e.date)).toList();
+      final creditsPeriod = credits.where((e) => inRange(e.date)).toList();
 
-      double installmentsThisMonth = 0;
-      final List<InstallmentPlan> installmentsInMonth = [];
+      final debitSpent = debitsPeriod.fold<double>(0, (p, e) => p + e.amount);
+      final creditSpent = creditsPeriod.fold<double>(0, (p, e) => p + e.amount);
+
+      double installmentsInPeriodTotal = 0;
+      final List<InstallmentPlan> installmentsInPeriod = [];
+
       for (final plan in installments) {
-        final monthsDiff =
-            (now.year - plan.startDate.year) * 12 +
-            (now.month - plan.startDate.month);
-        final current = monthsDiff + 1;
-        if (current >= 1 && current <= plan.totalInstallments) {
-          installmentsThisMonth += plan.installmentValue;
-          installmentsInMonth.add(plan);
+        bool hasInstallmentInPeriod = false;
+
+        for (int i = 0; i < plan.totalInstallments; i++) {
+          final due = DateTime(
+            plan.startDate.year,
+            plan.startDate.month + i,
+            plan.startDate.day,
+          );
+
+          if (inRange(due)) {
+            installmentsInPeriodTotal += plan.installmentValue;
+            hasInstallmentInPeriod = true;
+          }
+        }
+
+        if (hasInstallmentInPeriod) {
+          installmentsInPeriod.add(plan);
         }
       }
 
       final categoryMap = sumByCategory([
-        ...debitsMonth,
-        ...creditsMonth,
-        ...installmentsInMonth,
+        ...debitsPeriod,
+        ...creditsPeriod,
+        ...installmentsInPeriod,
       ]);
 
+      if (!mounted) return;
       setState(() {
         debitInitial = initial;
         debitTotalSpent = debitSpent;
-        creditTotalMonth = creditSpent;
-        creditInstallmentsMonth = installmentsThisMonth;
+        creditTotalPeriod = creditSpent;
+        creditInstallmentsPeriod = installmentsInPeriodTotal;
         categoryTotals = categoryMap;
         loading = false;
       });
@@ -96,24 +155,67 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    final filter = context.watch<DateFilterController>();
+
     if (loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final debitCurrent = debitInitial - debitTotalSpent;
-    final creditInvoice = creditTotalMonth + creditInstallmentsMonth;
+    final creditInvoice = creditTotalPeriod + creditInstallmentsPeriod;
+
+    String periodLabel() {
+      if (!filter.useRange) return monthFmt.format(filter.selectedMonth);
+      return '${dateFmt.format(filter.effectiveStart)} até ${dateFmt.format(filter.effectiveEnd)}';
+    }
 
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: Text('Controle Financeiro'),
-        titleTextStyle: TextStyle(fontSize: 22),
+        title: const Text('Controle Financeiro'),
+        titleTextStyle: const TextStyle(fontSize: 22),
       ),
       body: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
           padding: const EdgeInsets.all(12),
           children: [
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ChoiceChip(
+                  label: const Text('Mês'),
+                  selected: !filter.useRange,
+                  onSelected: (_) {
+                    filter.setUseRange(false);
+                    _load();
+                  },
+                ),
+                ChoiceChip(
+                  label: const Text('Período'),
+                  selected: filter.useRange,
+                  onSelected: (_) {
+                    filter.setUseRange(true);
+                    _load();
+                  },
+                ),
+                ActionChip(
+                  avatar: const Icon(Icons.date_range, size: 18),
+                  label: Text(
+                    filter.useRange ? 'Alterar período' : 'Alterar mês',
+                  ),
+                  onPressed: () =>
+                      filter.useRange ? _pickRange(filter) : _pickMonth(filter),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Filtro: ${periodLabel()}',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 10),
             _InfoCard(
               title: 'Saldo (débito)',
               value: 'R\$ ${debitCurrent.toStringAsFixed(2)}',
@@ -122,21 +224,31 @@ class _DashboardPageState extends State<DashboardPage> {
               onTap: () => _openRouteAndRefresh('/debit'),
             ),
             _InfoCard(
-              title: 'Crédito (gastos mês)',
-              value: 'R\$ ${creditTotalMonth.toStringAsFixed(2)}',
-              subtitle: 'Gastos avulsos do mês',
+              title: filter.useRange
+                  ? 'Crédito (período)'
+                  : 'Crédito (gastos mês)',
+              value: 'R\$ ${creditTotalPeriod.toStringAsFixed(2)}',
+              subtitle: filter.useRange
+                  ? 'Gastos avulsos no período'
+                  : 'Gastos avulsos do mês',
               onTap: () => _openRouteAndRefresh('/credit'),
             ),
             _InfoCard(
-              title: 'Parcelas (mês)',
-              value: 'R\$ ${creditInstallmentsMonth.toStringAsFixed(2)}',
-              subtitle: 'Parcelas que caem este mês',
+              title: filter.useRange ? 'Parcelas (período)' : 'Parcelas (mês)',
+              value: 'R\$ ${creditInstallmentsPeriod.toStringAsFixed(2)}',
+              subtitle: filter.useRange
+                  ? 'Parcelas que caem no período'
+                  : 'Parcelas que caem este mês',
               onTap: () => _openRouteAndRefresh('/installments'),
             ),
             _InfoCard(
-              title: 'Fatura total (mês)',
+              title: filter.useRange
+                  ? 'Fatura total (período)'
+                  : 'Fatura total (mês)',
               value: 'R\$ ${creditInvoice.toStringAsFixed(2)}',
-              subtitle: 'Crédito + parcelas do mês',
+              subtitle: filter.useRange
+                  ? 'Crédito + parcelas do período'
+                  : 'Crédito + parcelas do mês',
               onTap: () => _openRouteAndRefresh('/summary'),
             ),
             const SizedBox(height: 40),
@@ -179,6 +291,7 @@ class _InfoCard extends StatelessWidget {
   final String value;
   final String? subtitle;
   final VoidCallback onTap;
+
   const _InfoCard({
     required this.title,
     required this.value,
@@ -203,6 +316,7 @@ class _NavChip extends StatelessWidget {
   final String label;
   final IconData icon;
   final VoidCallback onTap;
+
   const _NavChip({
     required this.label,
     required this.icon,

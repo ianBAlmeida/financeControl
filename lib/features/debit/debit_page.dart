@@ -1,11 +1,12 @@
 import 'package:finance_control/data/category.dart';
-import 'package:finance_control/data/local_storage.dart';
 import 'package:finance_control/data/models.dart';
 import 'package:finance_control/data/repository.dart';
 import 'package:finance_control/features/debit/debit_dialog.dart';
+import 'package:finance_control/shared/state/date_filter_controller.dart';
 import 'package:finance_control/shared/utils/input_parses.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 class DebitPage extends StatefulWidget {
   const DebitPage({super.key});
@@ -16,35 +17,46 @@ class DebitPage extends StatefulWidget {
 
 class _DebitPageState extends State<DebitPage> {
   late final FinanceRepository repo;
+  late final DateFilterController filter;
+
   List<DebitEntry> debits = [];
   double initialBalance = 0;
   bool loading = true;
+
   final currency = NumberFormat.simpleCurrency(locale: 'pt_BR');
+  final dateFmt = DateFormat.yMd('pt_BR');
 
   @override
   void initState() {
     super.initState();
-    repo = FinanceRepository(LocalStorage());
+    repo = context.read<FinanceRepository>();
+    filter = context.read<DateFilterController>();
     _load();
   }
 
-  //Carrega os lançamentos e saldo do mês corrente
   Future<void> _load() async {
     try {
-      await repo.reload();
       setState(() => loading = true);
-      final now = DateTime.now();
+
+      await repo.reload();
+
+      final start = filter.effectiveStart;
+      final end = filter.effectiveEnd;
+      bool inRange(DateTime d) => !d.isBefore(start) && !d.isAfter(end);
+
       final list = await repo.getDebits();
-      final bal = await repo.getInitialBalance(now.year, now.month);
+
+      final bal = await repo.getInitialBalance(start.year, start.month);
+
+      if (!mounted) return;
       setState(() {
-        debits = list
-            .where((e) => e.date.year == now.year && e.date.month == now.month)
-            .toList();
+        debits = list.where((e) => inRange(e.date)).toList();
         initialBalance = bal;
         loading = false;
       });
     } catch (e) {
-      if (!mounted) return setState(() => loading = false);
+      if (!mounted) return;
+      setState(() => loading = false);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Erro ao carregar débitos: $e')));
@@ -54,36 +66,43 @@ class _DebitPageState extends State<DebitPage> {
   double get totalSpent => debits.fold(0, (p, e) => p + e.amount);
   double get currentBalance => initialBalance - totalSpent;
 
-  //Cria ou edita um lançamento de débito
   Future<void> _editInitialBalance() async {
-    final controller = TextEditingController(
-      text: initialBalance.toStringAsFixed(2),
-    );
+    final controller = TextEditingController();
+
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Saldo inicial do mês'),
+        title: Text('Saldo inicial (${filter.labelPtBr()})'),
         content: TextField(
           controller: controller,
-          keyboardType: TextInputType.number,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: const InputDecoration(
             labelText: 'Valor',
             prefixText: 'R\$ ',
+            hintText: 'Ex: 1650,00',
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancelar'),
           ),
           TextButton(
             onPressed: () async {
-              final parsed = parsePtBrToDouble(controller.text);
-              final v = parsed > 0 ? parsed : initialBalance;
-              initialBalance;
-              final now = DateTime.now();
-              await repo.setInitialBalance(now.year, now.month, v);
-              Navigator.pop(context);
+              final raw = controller.text.trim();
+              if (raw.isEmpty) {
+                Navigator.pop(ctx);
+                return;
+              }
+
+              final parsed = parsePtBrToDouble(raw);
+              if (parsed < 0) return;
+
+              final base = filter.effectiveStart;
+              await repo.setInitialBalance(base.year, base.month, parsed);
+
+              if (!mounted) return;
+              Navigator.pop(ctx);
               _load();
             },
             child: const Text('Salvar'),
@@ -101,9 +120,7 @@ class _DebitPageState extends State<DebitPage> {
       builder: (_) => DebitDialog(existing: existing, repo: repo),
     );
 
-    if (changed == true) {
-      _load();
-    }
+    if (changed == true) _load();
   }
 
   Future<void> _removeDebit(String id) async {
@@ -124,6 +141,7 @@ class _DebitPageState extends State<DebitPage> {
         ],
       ),
     );
+
     if (confirm == true) {
       await repo.removeDebit(id);
       _load();
@@ -132,13 +150,18 @@ class _DebitPageState extends State<DebitPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (loading)
+    final currentFilter = context.watch<DateFilterController>();
+
+    if (loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Débito'),
         actions: [
           IconButton(
+            tooltip: 'Editar saldo inicial',
             onPressed: _editInitialBalance,
             icon: const Icon(Icons.edit),
           ),
@@ -147,9 +170,11 @@ class _DebitPageState extends State<DebitPage> {
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
+          Text('Filtro: ${currentFilter.labelPtBr()}'),
+          const SizedBox(height: 8),
           Card(
             child: ListTile(
-              title: const Text('Saldo inicial (mês)'),
+              title: const Text('Saldo inicial (referência)'),
               trailing: Text(currency.format(initialBalance)),
               subtitle: Text('Saldo Atual: ${currency.format(currentBalance)}'),
             ),
@@ -160,7 +185,7 @@ class _DebitPageState extends State<DebitPage> {
               child: ListTile(
                 title: Text(d.description),
                 subtitle: Text(
-                  '${d.category.label} - ${d.person} - ${DateFormat.yMd('pt_BR').format(d.date)}',
+                  '${d.category.label} - ${d.person} - ${dateFmt.format(d.date)}',
                 ),
                 trailing: Text('- ${currency.format(d.amount)}'),
                 onTap: () => _addOrEdit(existing: d),

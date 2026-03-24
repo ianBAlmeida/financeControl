@@ -1,7 +1,8 @@
 import 'package:finance_control/app_router.dart';
-import 'package:finance_control/shared/app_theme.dart';
 import 'package:finance_control/data/local_storage.dart';
 import 'package:finance_control/data/repository.dart';
+import 'package:finance_control/shared/app_theme.dart';
+import 'package:finance_control/shared/state/date_filter_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -10,9 +11,17 @@ import 'package:provider/provider.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('pt_BR');
+
   runApp(
-    Provider<FinanceRepository>(
-      create: (_) => FinanceRepository(LocalStorage()),
+    MultiProvider(
+      providers: [
+        Provider<FinanceRepository>(
+          create: (_) => FinanceRepository(LocalStorage()),
+        ),
+        ChangeNotifierProvider<DateFilterController>(
+          create: (_) => DateFilterController(),
+        ),
+      ],
       child: const FinanceApp(),
     ),
   );
@@ -28,18 +37,15 @@ class FinanceApp extends StatelessWidget {
       theme: AppTheme.dark(),
       routerConfig: appRouter,
       builder: (ctx, child) {
-        return Container(
+        return DecoratedBox(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                Color.fromARGB(255, 60, 17, 134),
-                Color.fromARGB(255, 136, 124, 158),
-              ],
+              colors: [Color(0xFF3C1186), Color(0xFF887C9E)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
           ),
-          child: child,
+          child: child ?? const SizedBox.shrink(),
         );
       },
       supportedLocales: const [Locale('pt', 'BR')],

@@ -1,10 +1,11 @@
 import 'package:finance_control/data/category.dart';
-import 'package:finance_control/data/local_storage.dart';
 import 'package:finance_control/data/models.dart';
 import 'package:finance_control/data/repository.dart';
 import 'package:finance_control/features/credit/credit_month_dialog.dart';
+import 'package:finance_control/shared/state/date_filter_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 class CreditPage extends StatefulWidget {
   const CreditPage({super.key});
@@ -15,27 +16,33 @@ class CreditPage extends StatefulWidget {
 
 class _CreditPageState extends State<CreditPage> {
   late final FinanceRepository repo;
-  List<CreditEntry> credits = [];
   bool loading = true;
+  List<CreditEntry> credits = [];
   final currency = NumberFormat.simpleCurrency(locale: 'pt_BR');
 
   @override
   void initState() {
     super.initState();
-    repo = FinanceRepository(LocalStorage());
+    repo = context.read<FinanceRepository>();
     _load();
   }
 
   Future<void> _load() async {
-    setState(() => loading = true);
     try {
+      setState(() => loading = true);
       await repo.reload();
-      final now = DateTime.now();
+
+      final filter = context.read<DateFilterController>();
+      final start = filter.effectiveStart;
+      final end = filter.effectiveEnd;
+
+      bool inRange(DateTime d) => !d.isBefore(start) && !d.isAfter(end);
+
       final list = await repo.getCredits();
+
+      if (!mounted) return;
       setState(() {
-        credits = list
-            .where((e) => e.date.year == now.year && e.date.month == now.month)
-            .toList();
+        credits = list.where((e) => inRange(e.date)).toList();
         loading = false;
       });
     } catch (e) {
@@ -47,61 +54,43 @@ class _CreditPageState extends State<CreditPage> {
     }
   }
 
-  double get total => credits.fold(0, (p, e) => p + e.amount);
-
   Future<void> _addOrEdit({CreditEntry? existing}) async {
     final changed = await showDialog<bool>(
       context: context,
-      barrierDismissible: true,
-      barrierColor: Colors.black.withValues(alpha: 0.35),
       builder: (_) => CreditMonthDialog(existing: existing, repo: repo),
     );
-
-    if (changed == true) {
-      _load();
-    }
+    if (changed == true) _load();
   }
 
-  Future<void> _removeCredit(String id) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Remover crédito'),
-        content: const Text('Tem certeza que deseja remover esse lançamento?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Remover'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      await repo.removeCredit(id);
-      _load();
-    }
+  Future<void> _remove(String id) async {
+    await repo.removeCredit(id);
+    _load();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (loading)
+    final filter = context.watch<DateFilterController>();
+
+    if (loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final total = credits.fold<double>(0, (p, e) => p + e.amount);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Crédito (gastos do mês)')),
+      appBar: AppBar(title: const Text('Crédito')),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
+          Text('Filtro: ${filter.labelPtBr()}'),
+          const SizedBox(height: 8),
           Card(
             child: ListTile(
-              title: const Text('Total do mês'),
+              title: const Text('Total do período'),
               trailing: Text(currency.format(total)),
             ),
           ),
+          const SizedBox(height: 8),
           ...credits.map(
             (c) => Card(
               child: ListTile(
@@ -109,9 +98,9 @@ class _CreditPageState extends State<CreditPage> {
                 subtitle: Text(
                   '${c.category.label} - ${c.person} - ${DateFormat.yMd('pt_BR').format(c.date)}',
                 ),
-                trailing: Text(currency.format(c.amount)),
+                trailing: Text('- ${currency.format(c.amount)}'),
                 onTap: () => _addOrEdit(existing: c),
-                onLongPress: () => _removeCredit(c.id),
+                onLongPress: () => _remove(c.id),
               ),
             ),
           ),

@@ -6,6 +6,7 @@ import 'package:finance_control/shared/theme/app_colors.dart';
 import 'package:finance_control/shared/theme/app_spacing.dart';
 import 'package:finance_control/shared/widgets/app_card.dart';
 import 'package:finance_control/shared/widgets/app_loading.dart';
+import 'package:finance_control/shared/widgets/app_safe_area_shell.dart';
 import 'package:finance_control/shared/widgets/section_title.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -106,73 +107,75 @@ class _HistoryPageState extends State<HistoryPage> {
 
     if (loading || summary == null) return const AppLoading();
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Histórico')),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.sm),
-        children: [
-          SectionTitle(
-            title: 'Filtro global ativo',
-            subtitle: f.labelPtBr(),
-            trailing: ActionChip(
-              avatar: const Icon(Icons.date_range, size: 18),
-              label: Text(f.useRange ? 'Alterar período' : 'Alterar mês'),
-              onPressed: f.useRange ? _pickRange : _pickMonth,
+    return AppSafeAreaShell(
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Histórico')),
+        body: ListView(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          children: [
+            SectionTitle(
+              title: 'Filtro global ativo',
+              subtitle: f.labelPtBr(),
+              trailing: ActionChip(
+                avatar: const Icon(Icons.date_range, size: 18),
+                label: Text(f.useRange ? 'Alterar período' : 'Alterar mês'),
+                onPressed: f.useRange ? _pickRange : _pickMonth,
+              ),
             ),
-          ),
-          Wrap(
-            spacing: AppSpacing.xs,
-            children: [
-              ChoiceChip(
-                label: const Text('Mês'),
-                selected: !f.useRange,
-                onSelected: (_) => f.setUseRange(false),
-              ),
-              ChoiceChip(
-                label: const Text('Período'),
-                selected: f.useRange,
-                onSelected: (_) => f.setUseRange(true),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          _item('Saldo inicial', summary!.initialBalance),
-          _item('Débito', -summary!.debitTotal),
-          _item('Crédito', -summary!.creditTotal),
-          _item('Parcelamentos', -summary!.installmentsTotal),
-          _item('Total de saídas', -summary!.totalOut),
-          _item(
-            'Saldo final',
-            summary!.finalBalance,
-            color: summary!.finalBalance >= 0
-                ? AppColors.success
-                : AppColors.danger,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          AppCard(
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: ActionChip(
-                avatar: const Icon(Icons.list_alt, size: 18),
-                label: const Text('Ver detalhes dos gastos'),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => HistoryDetailsPage(
-                        start: f.effectiveStart,
-                        end: f.effectiveEnd,
-                        title: f.useRange
-                            ? 'Detalhes do período'
-                            : 'Detalhes do mês',
+            Wrap(
+              spacing: AppSpacing.xs,
+              children: [
+                ChoiceChip(
+                  label: const Text('Mês'),
+                  selected: !f.useRange,
+                  onSelected: (_) => f.setUseRange(false),
+                ),
+                ChoiceChip(
+                  label: const Text('Período'),
+                  selected: f.useRange,
+                  onSelected: (_) => f.setUseRange(true),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            _item('Saldo inicial', summary!.initialBalance),
+            _item('Débito', -summary!.debitTotal),
+            _item('Crédito', -summary!.creditTotal),
+            _item('Parcelamentos', -summary!.installmentsTotal),
+            _item('Total de saídas', -summary!.totalOut),
+            _item(
+              'Saldo final',
+              summary!.finalBalance,
+              color: summary!.finalBalance >= 0
+                  ? AppColors.success
+                  : AppColors.danger,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            AppCard(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: ActionChip(
+                  avatar: const Icon(Icons.list_alt, size: 18),
+                  label: const Text('Ver detalhes dos gastos'),
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => HistoryDetailsPage(
+                          start: f.effectiveStart,
+                          end: f.effectiveEnd,
+                          title: f.useRange
+                              ? 'Detalhes do período'
+                              : 'Detalhes do mês',
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.xl),
-        ],
+            const SizedBox(height: AppSpacing.xl),
+          ],
+        ),
       ),
     );
   }

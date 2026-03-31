@@ -7,6 +7,7 @@ import 'package:finance_control/shared/theme/app_colors.dart';
 import 'package:finance_control/shared/theme/app_spacing.dart';
 import 'package:finance_control/shared/widgets/app_card.dart';
 import 'package:finance_control/shared/widgets/app_loading.dart';
+import 'package:finance_control/shared/widgets/app_safe_area_shell.dart';
 import 'package:finance_control/shared/widgets/empty_state.dart';
 import 'package:finance_control/shared/widgets/section_title.dart';
 import 'package:flutter/material.dart';
@@ -95,59 +96,61 @@ class _CreditPageState extends State<CreditPage> {
 
     final total = credits.fold<double>(0, (p, e) => p + e.amount);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Crédito')),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.sm),
-        children: [
-          SectionTitle(
-            title: 'Filtro global ativo',
-            subtitle: currentFilter.labelPtBr(),
-          ),
-          AppCard(
-            child: ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Total no filtro'),
-              trailing: Text(
-                '- ${currency.format(total)}',
-                style: const TextStyle(color: AppColors.warning),
-              ),
+    return AppSafeAreaShell(
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Crédito')),
+        body: ListView(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          children: [
+            SectionTitle(
+              title: 'Filtro global ativo',
+              subtitle: currentFilter.labelPtBr(),
             ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          SectionTitle(
-            title: 'Lançamentos',
-            subtitle: '${credits.length} item(ns)',
-          ),
-          if (credits.isEmpty)
-            const AppCard(
-              child: EmptyState(
-                icon: Icons.credit_card_off_outlined,
-                title: 'Sem gastos no crédito',
-                message: 'Adicione um lançamento de crédito para começar.',
-              ),
-            )
-          else
-            ...credits.map(
-              (c) => AppCard(
-                onTap: () => _addOrEdit(existing: c),
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(c.description),
-                  subtitle: Text(
-                    '${c.category.label} • ${c.person} • ${dateFmt.format(c.date)}',
-                  ),
-                  trailing: Text('- ${currency.format(c.amount)}'),
-                  onLongPress: () => _remove(c.id),
+            AppCard(
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Total no filtro'),
+                trailing: Text(
+                  '- ${currency.format(total)}',
+                  style: const TextStyle(color: AppColors.warning),
                 ),
               ),
             ),
-          const SizedBox(height: AppSpacing.xl),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _addOrEdit(),
-        child: const Icon(Icons.add),
+            const SizedBox(height: AppSpacing.sm),
+            SectionTitle(
+              title: 'Lançamentos',
+              subtitle: '${credits.length} item(ns)',
+            ),
+            if (credits.isEmpty)
+              const AppCard(
+                child: EmptyState(
+                  icon: Icons.credit_card_off_outlined,
+                  title: 'Sem gastos no crédito',
+                  message: 'Adicione um lançamento de crédito para começar.',
+                ),
+              )
+            else
+              ...credits.map(
+                (c) => AppCard(
+                  onTap: () => _addOrEdit(existing: c),
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(c.description),
+                    subtitle: Text(
+                      '${c.category.label} • ${c.person} • ${dateFmt.format(c.date)}',
+                    ),
+                    trailing: Text('- ${currency.format(c.amount)}'),
+                    onLongPress: () => _remove(c.id),
+                  ),
+                ),
+              ),
+            const SizedBox(height: AppSpacing.xl),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => _addOrEdit(),
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }

@@ -7,6 +7,7 @@ import 'package:finance_control/shared/theme/app_colors.dart';
 import 'package:finance_control/shared/theme/app_spacing.dart';
 import 'package:finance_control/shared/widgets/app_card.dart';
 import 'package:finance_control/shared/widgets/app_loading.dart';
+import 'package:finance_control/shared/widgets/app_safe_area_shell.dart';
 import 'package:finance_control/shared/widgets/empty_state.dart';
 import 'package:finance_control/shared/widgets/section_title.dart';
 import 'package:flutter/material.dart';
@@ -111,61 +112,63 @@ class _InstallmentsPageState extends State<InstallmentsPage> {
 
     if (loading) return const AppLoading();
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Parcelamentos')),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.sm),
-        children: [
-          SectionTitle(
-            title: 'Filtro global ativo',
-            subtitle: currentFilter.labelPtBr(),
-          ),
-          AppCard(
-            child: ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Total de parcelas no filtro'),
-              trailing: Text(
-                '- ${currency.format(periodTotal)}',
-                style: const TextStyle(color: AppColors.warning),
-              ),
+    return AppSafeAreaShell(
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Parcelamentos')),
+        body: ListView(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          children: [
+            SectionTitle(
+              title: 'Filtro global ativo',
+              subtitle: currentFilter.labelPtBr(),
             ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          SectionTitle(
-            title: 'Planos no período',
-            subtitle: '${visible.length} plano(s)',
-          ),
-          if (visible.isEmpty)
-            const AppCard(
-              child: EmptyState(
-                icon: Icons.payments_outlined,
-                title: 'Sem parcelas no período',
-                message: 'Nenhuma parcela cai no filtro selecionado.',
-              ),
-            )
-          else
-            ...visible.map(
-              (p) => AppCard(
-                onTap: () => _addOrEdit(existing: p),
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(p.description),
-                  subtitle: Text(
-                    '${p.category.label} • ${p.person}\n'
-                    'Início: ${dateFmt.format(p.startDate)} • ${p.currentInstallment}/${p.totalInstallments}',
-                  ),
-                  isThreeLine: true,
-                  trailing: Text(currency.format(p.installmentValue)),
-                  onLongPress: () => _remove(p.id),
+            AppCard(
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Total de parcelas no filtro'),
+                trailing: Text(
+                  '- ${currency.format(periodTotal)}',
+                  style: const TextStyle(color: AppColors.warning),
                 ),
               ),
             ),
-          const SizedBox(height: AppSpacing.xl),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _addOrEdit(),
-        child: const Icon(Icons.add),
+            const SizedBox(height: AppSpacing.sm),
+            SectionTitle(
+              title: 'Planos no período',
+              subtitle: '${visible.length} plano(s)',
+            ),
+            if (visible.isEmpty)
+              const AppCard(
+                child: EmptyState(
+                  icon: Icons.payments_outlined,
+                  title: 'Sem parcelas no período',
+                  message: 'Nenhuma parcela cai no filtro selecionado.',
+                ),
+              )
+            else
+              ...visible.map(
+                (p) => AppCard(
+                  onTap: () => _addOrEdit(existing: p),
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(p.description),
+                    subtitle: Text(
+                      '${p.category.label} • ${p.person}\n'
+                      'Início: ${dateFmt.format(p.startDate)} • ${p.currentInstallment}/${p.totalInstallments}',
+                    ),
+                    isThreeLine: true,
+                    trailing: Text(currency.format(p.installmentValue)),
+                    onLongPress: () => _remove(p.id),
+                  ),
+                ),
+              ),
+            const SizedBox(height: AppSpacing.xl),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => _addOrEdit(),
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }

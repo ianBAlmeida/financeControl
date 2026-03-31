@@ -7,6 +7,7 @@ import 'package:finance_control/shared/theme/app_colors.dart';
 import 'package:finance_control/shared/theme/app_spacing.dart';
 import 'package:finance_control/shared/widgets/app_card.dart';
 import 'package:finance_control/shared/widgets/app_loading.dart';
+import 'package:finance_control/shared/widgets/app_safe_area_shell.dart';
 import 'package:finance_control/shared/widgets/empty_state.dart';
 import 'package:finance_control/shared/widgets/section_title.dart';
 import 'package:flutter/material.dart';
@@ -168,96 +169,98 @@ class _SummaryPageState extends State<SummaryPage> {
     final creditInvoice = creditSpent + creditInstallments;
     final projected = debitCurrent - creditInvoice;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Resumo')),
-      body: RefreshIndicator(
-        onRefresh: _load,
-        child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.sm),
-          children: [
-            SectionTitle(
-              title: 'Filtro global ativo',
-              subtitle: currentFilter.labelPtBr(),
-            ),
-            if (errorMessage != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                child: Text(
-                  errorMessage!,
-                  style: const TextStyle(color: AppColors.danger),
+    return AppSafeAreaShell(
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Resumo')),
+        body: RefreshIndicator(
+          onRefresh: _load,
+          child: ListView(
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            children: [
+              SectionTitle(
+                title: 'Filtro global ativo',
+                subtitle: currentFilter.labelPtBr(),
+              ),
+              if (errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                  child: Text(
+                    errorMessage!,
+                    style: const TextStyle(color: AppColors.danger),
+                  ),
                 ),
+
+              SectionTitle(title: 'Débito'),
+              _infoCard('Saldo inicial', debitInitial),
+              _infoCard('Gasto débito', debitSpent),
+              _infoCard(
+                'Saldo atual',
+                debitCurrent,
+                valueColor: debitCurrent >= 0
+                    ? AppColors.success
+                    : AppColors.danger,
               ),
 
-            SectionTitle(title: 'Débito'),
-            _infoCard('Saldo inicial', debitInitial),
-            _infoCard('Gasto débito', debitSpent),
-            _infoCard(
-              'Saldo atual',
-              debitCurrent,
-              valueColor: debitCurrent >= 0
-                  ? AppColors.success
-                  : AppColors.danger,
-            ),
-
-            const SizedBox(height: AppSpacing.sm),
-            SectionTitle(title: 'Crédito'),
-            _infoCard(
-              currentFilter.useRange ? 'Gastos do período' : 'Gastos do mês',
-              creditSpent,
-            ),
-            _infoCard(
-              currentFilter.useRange
-                  ? 'Parcelas do período'
-                  : 'Parcelas do mês',
-              creditInstallments,
-            ),
-            _infoCard(
-              currentFilter.useRange
-                  ? 'Fatura total (período)'
-                  : 'Fatura total (mês)',
-              creditInvoice,
-            ),
-
-            const SizedBox(height: AppSpacing.sm),
-            SectionTitle(title: 'Resumo geral'),
-            _infoCard('Saldo projetado (débito - fatura)', projected),
-
-            const SizedBox(height: AppSpacing.sm),
-            SectionTitle(
-              title: currentFilter.useRange
-                  ? 'Crédito por pessoa (período)'
-                  : 'Crédito por pessoa (mês)',
-            ),
-            if (creditByPerson.isEmpty)
-              const AppCard(
-                child: EmptyState(
-                  icon: Icons.people_outline,
-                  title: 'Sem dados por pessoa no período',
-                ),
-              )
-            else
-              ...creditByPerson.entries.map((e) => _lineRow(e.key, e.value)),
-
-            const SizedBox(height: AppSpacing.sm),
-            SectionTitle(
-              title: currentFilter.useRange
-                  ? 'Crédito + parcelas por pessoa (período)'
-                  : 'Crédito + parcelas por pessoa (mês)',
-            ),
-            if (creditByPersonWithInstallments.isEmpty)
-              const AppCard(
-                child: EmptyState(
-                  icon: Icons.groups_outlined,
-                  title: 'Sem dados consolidados por pessoa',
-                ),
-              )
-            else
-              ...creditByPersonWithInstallments.entries.map(
-                (e) => _lineRow(e.key, e.value),
+              const SizedBox(height: AppSpacing.sm),
+              SectionTitle(title: 'Crédito'),
+              _infoCard(
+                currentFilter.useRange ? 'Gastos do período' : 'Gastos do mês',
+                creditSpent,
+              ),
+              _infoCard(
+                currentFilter.useRange
+                    ? 'Parcelas do período'
+                    : 'Parcelas do mês',
+                creditInstallments,
+              ),
+              _infoCard(
+                currentFilter.useRange
+                    ? 'Fatura total (período)'
+                    : 'Fatura total (mês)',
+                creditInvoice,
               ),
 
-            const SizedBox(height: AppSpacing.xl),
-          ],
+              const SizedBox(height: AppSpacing.sm),
+              SectionTitle(title: 'Resumo geral'),
+              _infoCard('Saldo projetado (débito - fatura)', projected),
+
+              const SizedBox(height: AppSpacing.sm),
+              SectionTitle(
+                title: currentFilter.useRange
+                    ? 'Crédito por pessoa (período)'
+                    : 'Crédito por pessoa (mês)',
+              ),
+              if (creditByPerson.isEmpty)
+                const AppCard(
+                  child: EmptyState(
+                    icon: Icons.people_outline,
+                    title: 'Sem dados por pessoa no período',
+                  ),
+                )
+              else
+                ...creditByPerson.entries.map((e) => _lineRow(e.key, e.value)),
+
+              const SizedBox(height: AppSpacing.sm),
+              SectionTitle(
+                title: currentFilter.useRange
+                    ? 'Crédito + parcelas por pessoa (período)'
+                    : 'Crédito + parcelas por pessoa (mês)',
+              ),
+              if (creditByPersonWithInstallments.isEmpty)
+                const AppCard(
+                  child: EmptyState(
+                    icon: Icons.groups_outlined,
+                    title: 'Sem dados consolidados por pessoa',
+                  ),
+                )
+              else
+                ...creditByPersonWithInstallments.entries.map(
+                  (e) => _lineRow(e.key, e.value),
+                ),
+
+              const SizedBox(height: AppSpacing.xl),
+            ],
+          ),
         ),
       ),
     );

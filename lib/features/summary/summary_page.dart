@@ -257,12 +257,6 @@ class _SummaryPageState extends State<SummaryPage> {
                 (e) => _lineRow(e.key, e.value),
               ),
 
-            if (categoryTotals.isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.sm),
-              SectionTitle(title: 'Totais por categoria'),
-              AppCard(child: CategoryPieChart(totals: categoryTotals)),
-            ],
-
             const SizedBox(height: AppSpacing.xl),
           ],
         ),

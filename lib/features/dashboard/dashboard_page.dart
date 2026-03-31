@@ -176,7 +176,10 @@ class _DashboardPageState extends State<DashboardPage> {
       appBar: AppBar(
         centerTitle: true,
         title: const Text('Controle Financeiro'),
-        titleTextStyle: const TextStyle(fontSize: 22),
+        titleTextStyle: const TextStyle(
+          fontSize: 22,
+          color: AppColors.textPrimary,
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: _load,

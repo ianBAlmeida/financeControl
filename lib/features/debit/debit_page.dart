@@ -3,7 +3,13 @@ import 'package:finance_control/data/models.dart';
 import 'package:finance_control/data/repository.dart';
 import 'package:finance_control/features/debit/debit_dialog.dart';
 import 'package:finance_control/shared/state/date_filter_controller.dart';
+import 'package:finance_control/shared/theme/app_colors.dart';
+import 'package:finance_control/shared/theme/app_spacing.dart';
 import 'package:finance_control/shared/utils/input_parses.dart';
+import 'package:finance_control/shared/widgets/app_card.dart';
+import 'package:finance_control/shared/widgets/app_loading.dart';
+import 'package:finance_control/shared/widgets/empty_state.dart';
+import 'package:finance_control/shared/widgets/section_title.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -31,7 +37,19 @@ class _DebitPageState extends State<DebitPage> {
     super.initState();
     repo = context.read<FinanceRepository>();
     filter = context.read<DateFilterController>();
+    filter.addListener(_onFilterChanged);
     _load();
+  }
+
+  void _onFilterChanged() {
+    if (!mounted) return;
+    _load();
+  }
+
+  @override
+  void dispose() {
+    filter.removeListener(_onFilterChanged);
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -45,7 +63,6 @@ class _DebitPageState extends State<DebitPage> {
       bool inRange(DateTime d) => !d.isBefore(start) && !d.isAfter(end);
 
       final list = await repo.getDebits();
-
       final bal = await repo.getInitialBalance(start.year, start.month);
 
       if (!mounted) return;
@@ -119,7 +136,6 @@ class _DebitPageState extends State<DebitPage> {
       barrierColor: Colors.black.withValues(alpha: 0.35),
       builder: (_) => DebitDialog(existing: existing, repo: repo),
     );
-
     if (changed == true) _load();
   }
 
@@ -152,9 +168,7 @@ class _DebitPageState extends State<DebitPage> {
   Widget build(BuildContext context) {
     final currentFilter = context.watch<DateFilterController>();
 
-    if (loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
+    if (loading) return const AppLoading();
 
     return Scaffold(
       appBar: AppBar(
@@ -168,32 +182,62 @@ class _DebitPageState extends State<DebitPage> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppSpacing.sm),
         children: [
-          Text('Filtro: ${currentFilter.labelPtBr()}'),
-          const SizedBox(height: 8),
-          Card(
-            child: ListTile(
-              title: const Text('Saldo inicial (referência)'),
-              trailing: Text(currency.format(initialBalance)),
-              subtitle: Text('Saldo Atual: ${currency.format(currentBalance)}'),
-            ),
+          SectionTitle(
+            title: 'Filtro global ativo',
+            subtitle: currentFilter.labelPtBr(),
           ),
-          const SizedBox(height: 8),
-          ...debits.map(
-            (d) => Card(
-              child: ListTile(
-                title: Text(d.description),
-                subtitle: Text(
-                  '${d.category.label} - ${d.person} - ${dateFmt.format(d.date)}',
-                ),
-                trailing: Text('- ${currency.format(d.amount)}'),
-                onTap: () => _addOrEdit(existing: d),
-                onLongPress: () => _removeDebit(d.id),
+          AppCard(
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Saldo inicial'),
+              subtitle: Text('Saldo atual: ${currency.format(currentBalance)}'),
+              trailing: Text(
+                currency.format(initialBalance),
+                style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ),
           ),
-          const SizedBox(height: 64),
+          AppCard(
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Gasto total no filtro'),
+              trailing: Text(
+                '- ${currency.format(totalSpent)}',
+                style: const TextStyle(color: AppColors.danger),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          SectionTitle(
+            title: 'Lançamentos',
+            subtitle: '${debits.length} item(ns)',
+          ),
+          if (debits.isEmpty)
+            const AppCard(
+              child: EmptyState(
+                icon: Icons.receipt_long_outlined,
+                title: 'Sem débitos no período',
+                message: 'Adicione um lançamento para começar.',
+              ),
+            )
+          else
+            ...debits.map(
+              (d) => AppCard(
+                onTap: () => _addOrEdit(existing: d),
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(d.description),
+                  subtitle: Text(
+                    '${d.category.label} • ${d.person} • ${dateFmt.format(d.date)}',
+                  ),
+                  trailing: Text('- ${currency.format(d.amount)}'),
+                  onLongPress: () => _removeDebit(d.id),
+                ),
+              ),
+            ),
+          const SizedBox(height: AppSpacing.xl),
         ],
       ),
       floatingActionButton: FloatingActionButton(

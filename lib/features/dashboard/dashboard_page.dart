@@ -8,7 +8,6 @@ import 'package:finance_control/shared/theme/app_colors.dart';
 import 'package:finance_control/shared/theme/app_spacing.dart';
 import 'package:finance_control/shared/widgets/app_card.dart';
 import 'package:finance_control/shared/widgets/app_loading.dart';
-import 'package:finance_control/shared/widgets/app_safe_area_shell.dart';
 import 'package:finance_control/shared/widgets/empty_state.dart';
 import 'package:finance_control/shared/widgets/kpi_tile.dart';
 import 'package:finance_control/shared/widgets/section_title.dart';
@@ -173,148 +172,146 @@ class _DashboardPageState extends State<DashboardPage> {
       return '${dateFmt.format(filter.effectiveStart)} até ${dateFmt.format(filter.effectiveEnd)}';
     }
 
-    return AppSafeAreaShell(
-      child: Scaffold(
-        appBar: AppBar(
-          centerTitle: true,
-          title: const Text('Controle Financeiro'),
-          titleTextStyle: const TextStyle(
-            fontSize: 22,
-            color: AppColors.textPrimary,
-          ),
+    return Scaffold(
+      appBar: AppBar(
+        centerTitle: true,
+        title: const Text('Controle Financeiro'),
+        titleTextStyle: const TextStyle(
+          fontSize: 22,
+          color: AppColors.textPrimary,
         ),
-        body: RefreshIndicator(
-          onRefresh: _load,
-          child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.sm),
-            children: [
-              SectionTitle(
-                title: 'Filtro global',
-                subtitle: periodLabel(),
-                trailing: ActionChip(
-                  avatar: const Icon(Icons.date_range, size: 18),
-                  label: Text(
-                    filter.useRange ? 'Alterar período' : 'Alterar mês',
-                  ),
-                  onPressed: () =>
-                      filter.useRange ? _pickRange(filter) : _pickMonth(filter),
+      ),
+      body: RefreshIndicator(
+        onRefresh: _load,
+        child: ListView(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          children: [
+            SectionTitle(
+              title: 'Filtro global',
+              subtitle: periodLabel(),
+              trailing: ActionChip(
+                avatar: const Icon(Icons.date_range, size: 18),
+                label: Text(
+                  filter.useRange ? 'Alterar período' : 'Alterar mês',
                 ),
+                onPressed: () =>
+                    filter.useRange ? _pickRange(filter) : _pickMonth(filter),
               ),
-              Wrap(
+            ),
+            Wrap(
+              spacing: AppSpacing.xs,
+              children: [
+                ChoiceChip(
+                  label: const Text('Mês'),
+                  selected: !filter.useRange,
+                  onSelected: (_) {
+                    filter.setUseRange(false);
+                    _load();
+                  },
+                ),
+                ChoiceChip(
+                  label: const Text('Período'),
+                  selected: filter.useRange,
+                  onSelected: (_) {
+                    filter.setUseRange(true);
+                    _load();
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+
+            SectionTitle(title: 'Visão rápida'),
+            KpiTile(
+              label: 'Saldo atual (débito)',
+              value: 'R\$ ${debitCurrent.toStringAsFixed(2)}',
+              caption:
+                  'Inicial: R\$ ${debitInitial.toStringAsFixed(2)} • Gasto: R\$ ${debitTotalSpent.toStringAsFixed(2)}',
+              icon: Icons.account_balance_wallet_outlined,
+              valueColor: debitCurrent >= 0
+                  ? AppColors.success
+                  : AppColors.danger,
+              onTap: () => _openRouteAndRefresh('/debit'),
+            ),
+            KpiTile(
+              label: filter.useRange
+                  ? 'Fatura total (período)'
+                  : 'Fatura total (mês)',
+              value: 'R\$ ${creditInvoice.toStringAsFixed(2)}',
+              caption:
+                  'Crédito: R\$ ${creditTotalPeriod.toStringAsFixed(2)} • Parcelas: R\$ ${creditInstallmentsPeriod.toStringAsFixed(2)}',
+              icon: Icons.credit_card,
+              valueColor: AppColors.warning,
+              onTap: () => _openRouteAndRefresh('/summary'),
+            ),
+            KpiTile(
+              label: 'Total de saídas',
+              value: 'R\$ ${totalOut.toStringAsFixed(2)}',
+              caption: 'Débito + fatura',
+              icon: Icons.trending_down_rounded,
+              valueColor: AppColors.danger,
+            ),
+
+            const SizedBox(height: AppSpacing.sm),
+
+            SectionTitle(title: 'Atalhos'),
+            AppCard(
+              child: Wrap(
                 spacing: AppSpacing.xs,
+                runSpacing: AppSpacing.xs,
                 children: [
-                  ChoiceChip(
-                    label: const Text('Mês'),
-                    selected: !filter.useRange,
-                    onSelected: (_) {
-                      filter.setUseRange(false);
-                      _load();
-                    },
+                  _NavChip(
+                    label: 'Débito',
+                    icon: Icons.account_balance_wallet_outlined,
+                    onTap: () => _openRouteAndRefresh('/debit'),
                   ),
-                  ChoiceChip(
-                    label: const Text('Período'),
-                    selected: filter.useRange,
-                    onSelected: (_) {
-                      filter.setUseRange(true);
-                      _load();
-                    },
+                  _NavChip(
+                    label: 'Crédito',
+                    icon: Icons.credit_card,
+                    onTap: () => _openRouteAndRefresh('/credit'),
+                  ),
+                  _NavChip(
+                    label: 'Parcelas',
+                    icon: Icons.payments,
+                    onTap: () => _openRouteAndRefresh('/installments'),
+                  ),
+                  _NavChip(
+                    label: 'Resumo',
+                    icon: Icons.assessment,
+                    onTap: () => _openRouteAndRefresh('/summary'),
+                  ),
+                  _NavChip(
+                    label: 'Histórico',
+                    icon: Icons.calendar_month,
+                    onTap: () => _openRouteAndRefresh('/history'),
                   ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.sm),
+            ),
 
-              SectionTitle(title: 'Visão rápida'),
-              KpiTile(
-                label: 'Saldo atual (débito)',
-                value: 'R\$ ${debitCurrent.toStringAsFixed(2)}',
-                caption:
-                    'Inicial: R\$ ${debitInitial.toStringAsFixed(2)} • Gasto: R\$ ${debitTotalSpent.toStringAsFixed(2)}',
-                icon: Icons.account_balance_wallet_outlined,
-                valueColor: debitCurrent >= 0
-                    ? AppColors.success
-                    : AppColors.danger,
-                onTap: () => _openRouteAndRefresh('/debit'),
-              ),
-              KpiTile(
-                label: filter.useRange
-                    ? 'Fatura total (período)'
-                    : 'Fatura total (mês)',
-                value: 'R\$ ${creditInvoice.toStringAsFixed(2)}',
-                caption:
-                    'Crédito: R\$ ${creditTotalPeriod.toStringAsFixed(2)} • Parcelas: R\$ ${creditInstallmentsPeriod.toStringAsFixed(2)}',
-                icon: Icons.credit_card,
-                valueColor: AppColors.warning,
-                onTap: () => _openRouteAndRefresh('/summary'),
-              ),
-              KpiTile(
-                label: 'Total de saídas',
-                value: 'R\$ ${totalOut.toStringAsFixed(2)}',
-                caption: 'Débito + fatura',
-                icon: Icons.trending_down_rounded,
-                valueColor: AppColors.danger,
-              ),
+            const SizedBox(height: AppSpacing.sm),
 
-              const SizedBox(height: AppSpacing.sm),
-
-              SectionTitle(title: 'Atalhos'),
+            SectionTitle(title: 'Gastos por categoria'),
+            if (categoryTotals.isEmpty)
+              const AppCard(
+                child: EmptyState(
+                  icon: Icons.pie_chart_outline,
+                  title: 'Sem dados no período selecionado',
+                  message: 'Adicione lançamentos para visualizar o gráfico.',
+                ),
+              )
+            else ...[
               AppCard(
-                child: Wrap(
-                  spacing: AppSpacing.xs,
-                  runSpacing: AppSpacing.xs,
-                  children: [
-                    _NavChip(
-                      label: 'Débito',
-                      icon: Icons.account_balance_wallet_outlined,
-                      onTap: () => _openRouteAndRefresh('/debit'),
-                    ),
-                    _NavChip(
-                      label: 'Crédito',
-                      icon: Icons.credit_card,
-                      onTap: () => _openRouteAndRefresh('/credit'),
-                    ),
-                    _NavChip(
-                      label: 'Parcelas',
-                      icon: Icons.payments,
-                      onTap: () => _openRouteAndRefresh('/installments'),
-                    ),
-                    _NavChip(
-                      label: 'Resumo',
-                      icon: Icons.assessment,
-                      onTap: () => _openRouteAndRefresh('/summary'),
-                    ),
-                    _NavChip(
-                      label: 'Histórico',
-                      icon: Icons.calendar_month,
-                      onTap: () => _openRouteAndRefresh('/history'),
-                    ),
-                  ],
+                child: SizedBox(
+                  height: 240,
+                  child: CategoryPieChart(totals: categoryTotals),
                 ),
               ),
-
-              const SizedBox(height: AppSpacing.sm),
-
-              SectionTitle(title: 'Gastos por categoria'),
-              if (categoryTotals.isEmpty)
-                const AppCard(
-                  child: EmptyState(
-                    icon: Icons.pie_chart_outline,
-                    title: 'Sem dados no período selecionado',
-                    message: 'Adicione lançamentos para visualizar o gráfico.',
-                  ),
-                )
-              else ...[
-                AppCard(
-                  child: SizedBox(
-                    height: 240,
-                    child: CategoryPieChart(totals: categoryTotals),
-                  ),
-                ),
-                AppCard(child: CategoryPieChart(totals: categoryTotals)),
-              ],
-
-              const SizedBox(height: AppSpacing.lg),
+              AppCard(child: CategoryPieChart(totals: categoryTotals)),
             ],
-          ),
+
+            const SizedBox(height: AppSpacing.lg),
+          ],
         ),
       ),
     );

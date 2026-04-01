@@ -1,8 +1,8 @@
-import 'package:finance_control/data/category.dart';
-import 'package:finance_control/data/local_storage.dart';
 import 'package:finance_control/data/repository.dart';
+import 'package:finance_control/features/categories/domain/presentation/categories_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 enum HistoryItemType { debit, credit, installment }
 
@@ -10,7 +10,7 @@ class HistoryItem {
   final HistoryItemType type;
   final DateTime date;
   final String description;
-  final Category category;
+  final String? categoryId;
   final String person;
   final double amount;
   final String? extra;
@@ -19,7 +19,7 @@ class HistoryItem {
     required this.type,
     required this.date,
     required this.description,
-    required this.category,
+    required this.categoryId,
     required this.person,
     required this.amount,
     this.extra,
@@ -53,8 +53,7 @@ class _HistoryDetailsPageState extends State<HistoryDetailsPage> {
   @override
   void initState() {
     super.initState();
-    repo = FinanceRepository(LocalStorage());
-    _load();
+    repo = context.read<FinanceRepository>();
   }
 
   bool _inRange(DateTime d) {
@@ -79,7 +78,7 @@ class _HistoryDetailsPageState extends State<HistoryDetailsPage> {
             type: HistoryItemType.debit,
             date: d.date,
             description: d.description,
-            category: d.category,
+            categoryId: d.categoryId,
             person: d.person,
             amount: d.amount,
           ),
@@ -95,7 +94,7 @@ class _HistoryDetailsPageState extends State<HistoryDetailsPage> {
             type: HistoryItemType.credit,
             date: c.date,
             description: c.description,
-            category: c.category,
+            categoryId: c.categoryId,
             person: c.person,
             amount: c.amount,
           ),
@@ -118,7 +117,7 @@ class _HistoryDetailsPageState extends State<HistoryDetailsPage> {
               type: HistoryItemType.installment,
               date: due,
               description: p.description,
-              category: p.category,
+              categoryId: p.categoryId,
               person: p.person,
               amount: p.installmentValue,
               extra: 'Parcela ${i + 1}/${p.totalInstallments}',
@@ -161,6 +160,7 @@ class _HistoryDetailsPageState extends State<HistoryDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final categoriesCtrl = context.watch<CategoriesController>();
     final subtitlePeriod =
         '${dateFmt.format(widget.start)} até ${dateFmt.format(widget.end)}';
 
@@ -210,7 +210,7 @@ class _HistoryDetailsPageState extends State<HistoryDetailsPage> {
                                 ),
                                 title: Text(item.description),
                                 subtitle: Text(
-                                  '${_typeLabel(item.type)} • ${item.category.label} • ${item.person}\n'
+                                  '${_typeLabel(item.type)} • ${categoriesCtrl.nameOf(item.categoryId!)} • ${item.person}\n'
                                   '${dateFmt.format(item.date)}'
                                   '${item.extra != null ? ' • ${item.extra}' : ''}',
                                 ),

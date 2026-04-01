@@ -1,6 +1,6 @@
-import 'package:finance_control/data/category.dart';
 import 'package:finance_control/data/models.dart';
 import 'package:finance_control/data/repository.dart';
+import 'package:finance_control/features/categories/domain/presentation/categories_controller.dart';
 import 'package:finance_control/features/credit/installments_dialog.dart';
 import 'package:finance_control/shared/state/date_filter_controller.dart';
 import 'package:finance_control/shared/theme/app_colors.dart';
@@ -85,6 +85,7 @@ class _InstallmentsPageState extends State<InstallmentsPage> {
   @override
   Widget build(BuildContext context) {
     final currentFilter = context.watch<DateFilterController>();
+    final categoriesCtrl = context.watch<CategoriesController>();
     final start = currentFilter.effectiveStart;
     final end = currentFilter.effectiveEnd;
 
@@ -151,7 +152,7 @@ class _InstallmentsPageState extends State<InstallmentsPage> {
                   contentPadding: EdgeInsets.zero,
                   title: Text(p.description),
                   subtitle: Text(
-                    '${p.category.label} • ${p.person}\n'
+                    '${categoriesCtrl.nameOf(p.categoryId)} • ${p.person}\n'
                     'Início: ${dateFmt.format(p.startDate)} • ${p.currentInstallment}/${p.totalInstallments}',
                   ),
                   isThreeLine: true,

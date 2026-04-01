@@ -1,45 +1,77 @@
-import 'package:finance_control/data/category.dart';
+import 'package:finance_control/features/categories/domain/category_colors.dart';
+import 'package:finance_control/features/categories/domain/presentation/categories_controller.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 class CategoryPieChart extends StatelessWidget {
-  final Map<Category, double> totals;
-  const CategoryPieChart({super.key, required this.totals});
+  final Map<String, double> totals; // categoryId -> total
+  final CategoriesController categoriesCtrl;
+
+  const CategoryPieChart({
+    super.key,
+    required this.totals,
+    required this.categoriesCtrl,
+  });
 
   @override
   Widget build(BuildContext context) {
     final totalValue = totals.values.fold<double>(0, (p, e) => p + e);
     if (totalValue == 0) {
-      return const Center(child: Text('Sem dados para o mês!'));
+      return const Center(child: Text('Sem dados para o período!'));
     }
 
-    final colors = _categoryColors(context);
-    final sections = totals.entries.map((e) {
+    // Ordena do maior para o menor
+    final sorted = totals.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    // Top 6 + Outros
+    const topN = 6;
+    final top = sorted.take(topN).toList();
+    final others = sorted.skip(topN).fold<double>(0, (p, e) => p + e.value);
+
+    final sections = <PieChartSectionData>[];
+
+    for (final e in top) {
+      final category = categoriesCtrl.byId(e.key);
+      final name = category?.name ?? 'Sem categoria';
+      final color = category != null
+          ? CategoryColors.hexToColor(category.colorHex)
+          : CategoryColors.byId(e.key);
+
       final percent = (e.value / totalValue * 100).toStringAsFixed(1);
-      return PieChartSectionData(
-        color: colors[e.key],
-        value: e.value,
-        title: '${e.key.label}\n$percent',
-        radius: 98,
-        titleStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+
+      sections.add(
+        PieChartSectionData(
+          color: color,
+          value: e.value,
+          title: '$name\n$percent%',
+          radius: 98,
+          titleStyle: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       );
-    }).toList();
+    }
+
+    if (others > 0) {
+      final percent = (others / totalValue * 100).toStringAsFixed(1);
+      sections.add(
+        PieChartSectionData(
+          color: const Color(0xFF9CA3AF),
+          value: others,
+          title: 'Outros\n$percent%',
+          radius: 98,
+          titleStyle: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+    }
 
     return PieChart(
       PieChartData(sections: sections, sectionsSpace: 2, centerSpaceRadius: 24),
     );
   }
-}
-
-Map<Category, Color> _categoryColors(BuildContext context) {
-  return {
-    Category.alimentacao: const Color.fromARGB(255, 6, 105, 14),
-    Category.carro: const Color.fromARGB(255, 83, 124, 7),
-    Category.cosmetico: Colors.blueGrey,
-    Category.lazer: const Color.fromARGB(255, 150, 16, 16),
-    Category.mercado: Colors.brown,
-    Category.transporte: Colors.pinkAccent,
-    Category.servico: Colors.indigo,
-    Category.outros: Colors.teal,
-  };
 }

@@ -1,4 +1,3 @@
-import 'package:finance_control/data/category.dart';
 import 'package:finance_control/data/models.dart';
 import 'package:finance_control/data/repository.dart';
 import 'package:finance_control/features/summary/category_totals.dart';
@@ -34,7 +33,7 @@ class _SummaryPageState extends State<SummaryPage> {
 
   Map<String, double> creditByPerson = {};
   Map<String, double> creditByPersonWithInstallments = {};
-  Map<Category, double> categoryTotals = {};
+  Map<String, double> categoryTotals = {};
 
   final currency = NumberFormat.simpleCurrency(locale: 'pt_BR');
 
@@ -108,7 +107,7 @@ class _SummaryPageState extends State<SummaryPage> {
               InstallmentPlan(
                 id: plan.id,
                 description: plan.description,
-                category: plan.category,
+                categoryId: plan.categoryId,
                 person: plan.person,
                 installmentValue: plan.installmentValue,
                 totalInstallments: plan.totalInstallments,
@@ -132,7 +131,7 @@ class _SummaryPageState extends State<SummaryPage> {
             (byPersonWithInst[p.person] ?? 0) + p.installmentValue;
       }
 
-      final categoryMap = sumByCategory([
+      final categoryMap = sumByCategoryId([
         ...debitsPeriod,
         ...creditsPeriod,
         ...installmentsForCategory,

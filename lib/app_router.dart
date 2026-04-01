@@ -1,3 +1,4 @@
+import 'package:finance_control/features/categories/domain/presentation/category_page.dart';
 import 'package:finance_control/features/debit/debit_page.dart';
 import 'package:finance_control/features/credit/installments_page.dart';
 import 'package:finance_control/features/dashboard/dashboard_page.dart';
@@ -28,6 +29,10 @@ final appRouter = GoRouter(
         GoRoute(
           path: 'history',
           builder: (context, state) => const HistoryPage(),
+        ),
+        GoRoute(
+          path: 'category',
+          builder: (context, state) => const CategoriesPage(),
         ),
       ],
     ),

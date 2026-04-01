@@ -1,12 +1,11 @@
 import 'dart:convert';
-import 'category.dart';
 
 //dinheiro de débito
 class DebitEntry {
   final String id;
   final DateTime date;
   final String description;
-  final Category category;
+  final String categoryId;
   final String person;
   final double amount;
 
@@ -14,7 +13,7 @@ class DebitEntry {
     required this.id,
     required this.date,
     required this.description,
-    required this.category,
+    required this.categoryId,
     required this.person,
     required this.amount,
   });
@@ -24,7 +23,7 @@ class DebitEntry {
     'id': id,
     'date': date.toIso8601String(),
     'description': description,
-    'category': category.name,
+    'category': categoryId,
     'person': person,
     'amount': amount,
   };
@@ -34,7 +33,7 @@ class DebitEntry {
     id: map['id'],
     date: DateTime.parse(map['date']),
     description: map['description'],
-    category: categoryFormString(map['category']),
+    categoryId: map['category'],
     person: map['person'],
     amount: (map['amount'] as num).toDouble(),
   );
@@ -44,7 +43,7 @@ class DebitEntry {
     String? id,
     DateTime? date,
     String? description,
-    Category? category,
+    String? categoryId,
     String? person,
     double? amount,
   }) {
@@ -52,7 +51,7 @@ class DebitEntry {
       id: id ?? this.id,
       date: date ?? this.date,
       description: description ?? this.description,
-      category: category ?? this.category,
+      categoryId: categoryId ?? this.categoryId,
       person: person ?? this.person,
       amount: amount ?? this.amount,
     );
@@ -64,7 +63,7 @@ class CreditEntry {
   final String id;
   final DateTime date;
   final String description;
-  final Category category;
+  final String categoryId;
   final String person;
   final double amount;
 
@@ -72,7 +71,7 @@ class CreditEntry {
     required this.id,
     required this.date,
     required this.description,
-    required this.category,
+    required this.categoryId,
     required this.person,
     required this.amount,
   });
@@ -82,7 +81,7 @@ class CreditEntry {
     'id': id,
     'date': date.toIso8601String(),
     'description': description,
-    'category': category.name,
+    'category': categoryId,
     'person': person,
     'amount': amount,
   };
@@ -92,7 +91,7 @@ class CreditEntry {
     id: map['id'],
     date: DateTime.parse(map['date']),
     description: map['description'],
-    category: categoryFormString(map['category']),
+    categoryId: map['category'],
     person: map['person'],
     amount: (map['amount'] as num).toDouble(),
   );
@@ -102,7 +101,7 @@ class CreditEntry {
     String? id,
     DateTime? date,
     String? description,
-    Category? category,
+    String? categoryId,
     String? person,
     double? amount,
   }) {
@@ -110,7 +109,7 @@ class CreditEntry {
       id: id ?? this.id,
       date: date ?? this.date,
       description: description ?? this.description,
-      category: category ?? this.category,
+      categoryId: categoryId ?? this.categoryId,
       person: person ?? this.person,
       amount: amount ?? this.amount,
     );
@@ -121,17 +120,17 @@ class CreditEntry {
 class InstallmentPlan {
   final String id;
   final String description;
-  final Category category;
+  final String categoryId;
   final String person;
   final double installmentValue;
   final int totalInstallments;
-  final int currentInstallment; // parcela atual (1-index)
+  final int currentInstallment;
   final DateTime startDate;
 
   InstallmentPlan({
     required this.id,
     required this.description,
-    required this.category,
+    required this.categoryId,
     required this.person,
     required this.installmentValue,
     required this.totalInstallments,
@@ -143,7 +142,7 @@ class InstallmentPlan {
   Map<String, dynamic> toMap() => {
     'id': id,
     'description': description,
-    'category': category.name,
+    'category': categoryId,
     'person': person,
     'installmentValue': installmentValue,
     'totalInstallments': totalInstallments,
@@ -155,7 +154,7 @@ class InstallmentPlan {
   factory InstallmentPlan.fromMap(Map<String, dynamic> map) => InstallmentPlan(
     id: map['id'],
     description: map['description'],
-    category: categoryFormString(map['category']),
+    categoryId: map['category'],
     person: map['person'],
     installmentValue: (map['installmentValue'] as num).toDouble(),
     totalInstallments: map['totalInstallments'],
@@ -167,7 +166,7 @@ class InstallmentPlan {
   InstallmentPlan copyWith({
     String? id,
     String? description,
-    Category? category,
+    String? categoryId,
     String? person,
     double? installmentValue,
     int? totalInstallments,
@@ -177,7 +176,7 @@ class InstallmentPlan {
     return InstallmentPlan(
       id: id ?? this.id,
       description: description ?? this.description,
-      category: category ?? this.category,
+      categoryId: categoryId ?? this.categoryId,
       person: person ?? this.person,
       installmentValue: installmentValue ?? this.installmentValue,
       totalInstallments: totalInstallments ?? this.totalInstallments,
@@ -187,7 +186,6 @@ class InstallmentPlan {
   }
 }
 
-// Saldo inicial por mês
 class MonthlyBalance {
   final int year;
   final int month;

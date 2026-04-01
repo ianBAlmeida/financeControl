@@ -1,4 +1,3 @@
-import 'package:finance_control/data/category.dart';
 import 'package:finance_control/data/models.dart';
 import 'package:finance_control/data/repository.dart';
 import 'package:finance_control/shared/utils/expense_validators.dart';
@@ -23,7 +22,7 @@ class _DebitDialogState extends State<DebitDialog> {
   final personCtrl = TextEditingController();
   final valueCtrl = TextEditingController();
 
-  Category selected = Category.outros;
+  String? _selectedCategoryId;
   DateTime selectedDate = DateTime.now();
 
   @override
@@ -34,7 +33,7 @@ class _DebitDialogState extends State<DebitDialog> {
       descCtrl.text = e.description;
       personCtrl.text = e.person;
       valueCtrl.text = e.amount.toStringAsFixed(2);
-      selected = e.category;
+      _selectedCategoryId = e.categoryId;
       selectedDate = e.date;
     }
   }
@@ -50,6 +49,7 @@ class _DebitDialogState extends State<DebitDialog> {
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
+      initialDate: selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
     );
@@ -63,10 +63,15 @@ class _DebitDialogState extends State<DebitDialog> {
     final value = parsePtBrToDouble(valueCtrl.text);
     final descError = validateDescription(descCtrl.text);
     final valueError = validatePositiveAmount(value);
+    final categoryError =
+        (_selectedCategoryId == null || _selectedCategoryId!.isEmpty)
+        ? 'Selecione uma categoria'
+        : null;
 
-    final message = descError ?? valueError ?? 'Dados inválidos';
+    final message =
+        descError ?? valueError ?? categoryError ?? 'Dados inválidos';
 
-    if (descError != null || valueError != null) {
+    if (descError != null || valueError != null || categoryError != null) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -75,11 +80,13 @@ class _DebitDialogState extends State<DebitDialog> {
     }
 
     final entry = DebitEntry(
-      id: widget.existing?.id ?? 'plan',
+      id:
+          widget.existing?.id ??
+          DateTime.now().microsecondsSinceEpoch.toString(),
       date: selectedDate,
-      description: descCtrl.text,
-      category: selected,
-      person: personCtrl.text.isEmpty ? 'Você' : personCtrl.text.trim(),
+      description: descCtrl.text.trim(),
+      categoryId: _selectedCategoryId!,
+      person: personCtrl.text.trim().isEmpty ? 'Você' : personCtrl.text.trim(),
       amount: value,
     );
 
@@ -88,6 +95,7 @@ class _DebitDialogState extends State<DebitDialog> {
     } else {
       await widget.repo.updateDebit(entry);
     }
+
     if (!mounted) return;
     Navigator.pop(context, true);
   }
@@ -111,8 +119,8 @@ class _DebitDialogState extends State<DebitDialog> {
           ),
           const SizedBox(height: 12),
           CategoryDropdownField(
-            value: selected,
-            onChanged: (v) => setState(() => selected = v),
+            value: _selectedCategoryId,
+            onChanged: (v) => setState(() => _selectedCategoryId = v),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -125,7 +133,7 @@ class _DebitDialogState extends State<DebitDialog> {
             children: [
               Expanded(
                 child: Text(
-                  'Data ${DateFormat.yMd('pt_BR').format(selectedDate)}',
+                  'Data: ${DateFormat.yMd('pt_BR').format(selectedDate)}',
                 ),
               ),
               TextButton(onPressed: _pickDate, child: const Text('Selecionar')),

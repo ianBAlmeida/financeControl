@@ -1,4 +1,3 @@
-import 'package:finance_control/data/category.dart';
 import 'package:finance_control/data/models.dart';
 import 'package:finance_control/data/repository.dart';
 import 'package:finance_control/shared/utils/expense_validators.dart';
@@ -28,7 +27,7 @@ class _InstallmentsDialogState extends State<InstallmentsDialog> {
   final valueCtrl = TextEditingController();
   final totalCtrl = TextEditingController(text: '1');
   final currentCtrl = TextEditingController(text: '1');
-  Category selected = Category.outros;
+  String? _selectedCategoryId;
   DateTime selectedDate = DateTime.now();
   final currency = NumberFormat.simpleCurrency(locale: 'pt_BR');
 
@@ -42,7 +41,7 @@ class _InstallmentsDialogState extends State<InstallmentsDialog> {
       valueCtrl.text = e.installmentValue.toStringAsFixed(2);
       totalCtrl.text = e.totalInstallments.toString();
       currentCtrl.text = e.currentInstallment.toString();
-      selected = e.category;
+      _selectedCategoryId = e.categoryId;
       selectedDate = e.startDate;
     }
   }
@@ -92,7 +91,7 @@ class _InstallmentsDialogState extends State<InstallmentsDialog> {
     final plan = InstallmentPlan(
       id: widget.existing?.id ?? 'temp',
       description: descCtrl.text,
-      category: selected,
+      categoryId: _selectedCategoryId!,
       person: personCtrl.text.isEmpty ? 'Você' : personCtrl.text,
       installmentValue: value,
       totalInstallments: total,
@@ -130,8 +129,8 @@ class _InstallmentsDialogState extends State<InstallmentsDialog> {
           ),
           const SizedBox(height: 12),
           CategoryDropdownField(
-            value: selected,
-            onChanged: (v) => setState(() => selected = v),
+            value: _selectedCategoryId,
+            onChanged: (v) => setState(() => _selectedCategoryId = v),
           ),
           const SizedBox(height: 12),
           TextField(

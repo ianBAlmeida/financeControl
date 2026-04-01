@@ -1,6 +1,6 @@
-import 'package:finance_control/data/category.dart';
 import 'package:finance_control/data/models.dart';
 import 'package:finance_control/data/repository.dart';
+import 'package:finance_control/features/categories/domain/presentation/categories_controller.dart';
 import 'package:finance_control/features/credit/credit_month_dialog.dart';
 import 'package:finance_control/shared/state/date_filter_controller.dart';
 import 'package:finance_control/shared/theme/app_colors.dart';
@@ -90,6 +90,7 @@ class _CreditPageState extends State<CreditPage> {
   @override
   Widget build(BuildContext context) {
     final currentFilter = context.watch<DateFilterController>();
+    final categoriesCtrl = context.watch<CategoriesController>();
 
     if (loading) return const AppLoading();
 
@@ -135,7 +136,7 @@ class _CreditPageState extends State<CreditPage> {
                   contentPadding: EdgeInsets.zero,
                   title: Text(c.description),
                   subtitle: Text(
-                    '${c.category.label} • ${c.person} • ${dateFmt.format(c.date)}',
+                    '${categoriesCtrl.nameOf(c.categoryId)} • ${c.person} • ${dateFmt.format(c.date)}',
                   ),
                   trailing: Text('- ${currency.format(c.amount)}'),
                   onLongPress: () => _remove(c.id),

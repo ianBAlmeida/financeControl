@@ -1,6 +1,6 @@
-import 'package:finance_control/data/category.dart';
 import 'package:finance_control/data/models.dart';
 import 'package:finance_control/data/repository.dart';
+import 'package:finance_control/features/categories/domain/presentation/categories_controller.dart';
 import 'package:finance_control/features/debit/debit_dialog.dart';
 import 'package:finance_control/shared/state/date_filter_controller.dart';
 import 'package:finance_control/shared/theme/app_colors.dart';
@@ -167,6 +167,7 @@ class _DebitPageState extends State<DebitPage> {
   @override
   Widget build(BuildContext context) {
     final currentFilter = context.watch<DateFilterController>();
+    final categoriesCtrl = context.watch<CategoriesController>();
 
     if (loading) return const AppLoading();
 
@@ -230,7 +231,7 @@ class _DebitPageState extends State<DebitPage> {
                   contentPadding: EdgeInsets.zero,
                   title: Text(d.description),
                   subtitle: Text(
-                    '${d.category.label} • ${d.person} • ${dateFmt.format(d.date)}',
+                    '${categoriesCtrl.nameOf(d.categoryId)} • ${d.person} • ${dateFmt.format(d.date)}',
                   ),
                   trailing: Text('- ${currency.format(d.amount)}'),
                   onLongPress: () => _removeDebit(d.id),

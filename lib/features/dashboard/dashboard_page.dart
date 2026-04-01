@@ -1,6 +1,6 @@
-import 'package:finance_control/data/category.dart';
 import 'package:finance_control/data/models.dart';
 import 'package:finance_control/data/repository.dart';
+import 'package:finance_control/features/categories/domain/presentation/categories_controller.dart';
 import 'package:finance_control/features/summary/category_pie_chart.dart';
 import 'package:finance_control/features/summary/category_totals.dart';
 import 'package:finance_control/shared/state/date_filter_controller.dart';
@@ -24,7 +24,7 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  Map<Category, double> categoryTotals = {};
+  Map<String, double> categoryTotals = {};
   late final FinanceRepository repo;
   bool loading = true;
 
@@ -133,7 +133,7 @@ class _DashboardPageState extends State<DashboardPage> {
         if (hasInstallmentInPeriod) installmentsInPeriod.add(plan);
       }
 
-      final categoryMap = sumByCategory([
+      final categoryMap = sumByCategoryId([
         ...debitsPeriod,
         ...creditsPeriod,
         ...installmentsInPeriod,
@@ -160,6 +160,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     final filter = context.watch<DateFilterController>();
+    final categoriesCtrl = context.watch<CategoriesController>();
 
     if (loading) return const AppLoading();
 
@@ -271,14 +272,19 @@ class _DashboardPageState extends State<DashboardPage> {
                     onTap: () => _openRouteAndRefresh('/credit'),
                   ),
                   _NavChip(
-                    label: 'Parcelas',
-                    icon: Icons.payments,
-                    onTap: () => _openRouteAndRefresh('/installments'),
+                    label: 'Categorias',
+                    icon: Icons.category_rounded,
+                    onTap: () => _openRouteAndRefresh('/category'),
                   ),
                   _NavChip(
                     label: 'Resumo',
                     icon: Icons.assessment,
                     onTap: () => _openRouteAndRefresh('/summary'),
+                  ),
+                  _NavChip(
+                    label: 'Parcelas',
+                    icon: Icons.payments,
+                    onTap: () => _openRouteAndRefresh('/installments'),
                   ),
                   _NavChip(
                     label: 'Histórico',
@@ -304,10 +310,12 @@ class _DashboardPageState extends State<DashboardPage> {
               AppCard(
                 child: SizedBox(
                   height: 240,
-                  child: CategoryPieChart(totals: categoryTotals),
+                  child: CategoryPieChart(
+                    totals: categoryTotals,
+                    categoriesCtrl: categoriesCtrl,
+                  ),
                 ),
               ),
-              AppCard(child: CategoryPieChart(totals: categoryTotals)),
             ],
 
             const SizedBox(height: AppSpacing.lg),

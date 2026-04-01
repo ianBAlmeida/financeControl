@@ -1,16 +1,15 @@
-import 'package:finance_control/data/category.dart';
 import 'package:finance_control/data/models.dart';
 
-Map<Category, double> sumByCategory(Iterable<dynamic> entries) {
-  final Map<Category, double> totals = {};
+Map<String, double> sumByCategoryId(Iterable<dynamic> entries) {
+  final Map<String, double> totals = {};
   for (final e in entries) {
     final cat = switch (e) {
-      DebitEntry d => d.category,
-      CreditEntry c => c.category,
-      InstallmentPlan p => p.category,
-      _ => Category.outros,
+      DebitEntry d => d.categoryId,
+      CreditEntry c => c.categoryId,
+      InstallmentPlan p => p.categoryId,
+      _ => 'outros',
     };
-    final value = switch (e) {
+    final double value = switch (e) {
       DebitEntry d => d.amount,
       CreditEntry c => c.amount,
       InstallmentPlan p => p.installmentValue,

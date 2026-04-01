@@ -1,4 +1,3 @@
-import 'package:finance_control/data/category.dart';
 import 'package:finance_control/data/models.dart';
 import 'package:finance_control/data/repository.dart';
 import 'package:finance_control/shared/utils/expense_validators.dart';
@@ -26,7 +25,7 @@ class _CreditMonthDialogState extends State<CreditMonthDialog> {
   final personCtrl = TextEditingController();
   final valueCtrl = TextEditingController();
 
-  Category selected = Category.outros;
+  String? _selectedCategoryId;
   DateTime selectedDate = DateTime.now();
 
   @override
@@ -37,7 +36,7 @@ class _CreditMonthDialogState extends State<CreditMonthDialog> {
       descCtrl.text = e.description;
       personCtrl.text = e.person;
       valueCtrl.text = e.amount.toStringAsFixed(2);
-      selected = e.category;
+      _selectedCategoryId = e.categoryId;
       selectedDate = e.date;
     }
   }
@@ -82,7 +81,7 @@ class _CreditMonthDialogState extends State<CreditMonthDialog> {
       id: widget.existing?.id ?? 'plan',
       date: selectedDate,
       description: descCtrl.text,
-      category: selected,
+      categoryId: _selectedCategoryId!,
       person: personCtrl.text.isEmpty ? 'Você' : personCtrl.text.trim(),
       amount: value,
     );
@@ -115,8 +114,8 @@ class _CreditMonthDialogState extends State<CreditMonthDialog> {
           ),
           const SizedBox(height: 12),
           CategoryDropdownField(
-            value: selected,
-            onChanged: (v) => setState(() => selected = v),
+            value: _selectedCategoryId,
+            onChanged: (v) => setState(() => _selectedCategoryId = v),
           ),
           const SizedBox(height: 12),
           TextField(

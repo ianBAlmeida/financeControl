@@ -1,5 +1,7 @@
-import 'package:finance_control/data/category.dart';
+import 'package:finance_control/features/categories/domain/presentation/categories_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:finance_control/features/categories/domain/category_colors.dart';
 
 class CategoryDropdownField extends StatelessWidget {
   const CategoryDropdownField({
@@ -9,35 +11,37 @@ class CategoryDropdownField extends StatelessWidget {
     this.label = 'Categoria',
   });
 
-  final Category value;
-  final ValueChanged<Category> onChanged;
+  final String? value;
+  final ValueChanged<String?> onChanged;
   final String label;
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: Theme.of(context).copyWith(
-        canvasColor: const Color(0xFF1E1E1E), // fundo sólido do menu aberto
-      ),
-      child: DropdownButtonFormField<Category>(
-        value: value,
-        decoration: InputDecoration(labelText: label),
-        dropdownColor: const Color(0xFF1E1E1E),
-        items: Category.values
-            .map(
-              (c) => DropdownMenuItem<Category>(
-                value: c,
-                child: Text(
-                  c.label,
-                  style: const TextStyle(color: Colors.white),
-                ),
+    final categories = context.watch<CategoriesController>().active;
+
+    return DropdownButtonFormField<String>(
+      value: value,
+      decoration: InputDecoration(labelText: label),
+      items: categories.map((c) {
+        final color = CategoryColors.hexToColor(c.colorHex);
+        return DropdownMenuItem<String>(
+          value: c.id,
+          child: Row(
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
               ),
-            )
-            .toList(),
-        onChanged: (v) {
-          if (v != null) onChanged(v);
-        },
-      ),
+              const SizedBox(width: 8),
+              Text(c.name),
+            ],
+          ),
+        );
+      }).toList(),
+      onChanged: onChanged,
+      validator: (v) =>
+          (v == null || v.isEmpty) ? 'Selecione uma categoria' : null,
     );
   }
 }

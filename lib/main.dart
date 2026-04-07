@@ -9,6 +9,7 @@ import 'package:finance_control/features/categories/presentation/categories_cont
 import 'package:finance_control/shared/state/date_filter_controller.dart';
 import 'package:finance_control/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
@@ -16,9 +17,18 @@ import 'package:provider/provider.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await initializeDateFormatting('pt_BR');
+  // iOS/Android status bar (notch area)
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent, // fundo desenhado pelo app
+      statusBarIconBrightness: Brightness.light, // Android
+      statusBarBrightness: Brightness.dark, // iOS -> ícones claros
+      systemNavigationBarColor: Colors.black, // Android
+      systemNavigationBarIconBrightness: Brightness.light,
+    ),
+  );
 
-  // Migração antes de montar app/repositórios
+  await initializeDateFormatting('pt_BR');
   await MigrationV2Categories().run();
 
   runApp(const _Bootstrap());

@@ -1,4 +1,4 @@
-import 'package:finance_control/features/categories/domain/presentation/category_page.dart';
+import 'package:finance_control/features/categories/presentation/category_page.dart';
 import 'package:finance_control/features/debit/debit_page.dart';
 import 'package:finance_control/features/credit/installments_page.dart';
 import 'package:finance_control/features/dashboard/dashboard_page.dart';

@@ -1,4 +1,4 @@
-import 'package:finance_control/features/categories/domain/presentation/categories_controller.dart';
+import 'package:finance_control/features/categories/presentation/categories_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:finance_control/features/categories/domain/category_colors.dart';

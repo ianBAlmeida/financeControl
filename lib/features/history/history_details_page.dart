@@ -1,5 +1,5 @@
 import 'package:finance_control/data/repository.dart';
-import 'package:finance_control/features/categories/domain/presentation/categories_controller.dart';
+import 'package:finance_control/features/categories/presentation/categories_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -54,6 +54,7 @@ class _HistoryDetailsPageState extends State<HistoryDetailsPage> {
   void initState() {
     super.initState();
     repo = context.read<FinanceRepository>();
+    _load();
   }
 
   bool _inRange(DateTime d) {

@@ -1,9 +1,11 @@
 import 'package:finance_control/app_router.dart';
 import 'package:finance_control/core/migrations/migration_v2_categories.dart';
+import 'package:finance_control/data/category_budget_repository.dart';
 import 'package:finance_control/data/category_repository.dart';
 import 'package:finance_control/data/local_storage.dart';
 import 'package:finance_control/data/repository.dart';
-import 'package:finance_control/features/categories/domain/presentation/categories_controller.dart';
+import 'package:finance_control/features/budgets/presentation/category_budget_controller.dart';
+import 'package:finance_control/features/categories/presentation/categories_controller.dart';
 import 'package:finance_control/shared/state/date_filter_controller.dart';
 import 'package:finance_control/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -37,6 +39,10 @@ class _Bootstrap extends StatelessWidget {
         ),
         ChangeNotifierProvider<CategoriesController>(
           create: (_) => CategoriesController(CategoryRepository())..load(),
+        ),
+        ChangeNotifierProvider<CategoryBudgetController>(
+          create: (_) =>
+              CategoryBudgetController(CategoryBudgetRepository())..load(),
         ),
       ],
       child: const FinanceApp(),

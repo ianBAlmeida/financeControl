@@ -1,6 +1,6 @@
 import 'package:finance_control/data/models.dart';
 import 'package:finance_control/data/repository.dart';
-import 'package:finance_control/features/categories/domain/presentation/categories_controller.dart';
+import 'package:finance_control/features/categories/presentation/categories_controller.dart';
 import 'package:finance_control/features/credit/credit_month_dialog.dart';
 import 'package:finance_control/shared/state/date_filter_controller.dart';
 import 'package:finance_control/shared/theme/app_colors.dart';

@@ -1,5 +1,5 @@
 import 'package:finance_control/features/categories/domain/category_colors.dart';
-import 'package:finance_control/features/categories/domain/presentation/categories_controller.dart';
+import 'package:finance_control/features/categories/presentation/categories_controller.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 

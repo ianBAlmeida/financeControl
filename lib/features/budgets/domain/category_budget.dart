@@ -11,6 +11,6 @@ class CategoryBudget {
 
   factory CategoryBudget.fromMap(Map<String, dynamic> map) => CategoryBudget(
     categoryId: map['categoryId'] as String,
-    monthlyLimit: (map['maonthlyLimit'] as num).toDouble(),
+    monthlyLimit: (map['monthlyLimit'] as num).toDouble(),
   );
 }

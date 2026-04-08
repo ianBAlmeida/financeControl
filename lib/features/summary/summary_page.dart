@@ -1,9 +1,13 @@
 import 'package:finance_control/data/models.dart';
 import 'package:finance_control/data/repository.dart';
+import 'package:finance_control/features/budgets/presentation/category_budget_controller.dart';
+import 'package:finance_control/features/budgets/presentation/category_budget_tile.dart';
+import 'package:finance_control/features/categories/presentation/categories_controller.dart';
 import 'package:finance_control/features/summary/category_totals.dart';
 import 'package:finance_control/shared/state/date_filter_controller.dart';
 import 'package:finance_control/shared/theme/app_colors.dart';
 import 'package:finance_control/shared/theme/app_spacing.dart';
+import 'package:finance_control/shared/utils/installment_period_helper.dart';
 import 'package:finance_control/shared/widgets/app_card.dart';
 import 'package:finance_control/shared/widgets/app_loading.dart';
 import 'package:finance_control/shared/widgets/empty_state.dart';
@@ -91,33 +95,48 @@ class _SummaryPageState extends State<SummaryPage> {
       final List<InstallmentPlan> installmentsForCategory = [];
       final List<InstallmentPlan> installmentsOccurrences = [];
 
+      DateTime monthOnly(DateTime d) => DateTime(d.year, d.month, 1);
+      final startMonth = monthOnly(start);
+      final endMonth = monthOnly(end);
+
       for (final plan in installments) {
         bool hasAny = false;
-        for (int i = 0; i < plan.totalInstallments; i++) {
-          final due = DateTime(
-            plan.startDate.year,
-            plan.startDate.month + i,
-            plan.startDate.day,
-          );
-          if (inRange(due)) {
-            installmentsInPeriod += plan.installmentValue;
-            hasAny = true;
 
-            installmentsOccurrences.add(
-              InstallmentPlan(
-                id: plan.id,
-                description: plan.description,
-                categoryId: plan.categoryId,
-                person: plan.person,
-                installmentValue: plan.installmentValue,
-                totalInstallments: plan.totalInstallments,
-                currentInstallment: i + 1,
-                startDate: due,
-              ),
-            );
-          }
+        for (
+          DateTime m = startMonth;
+          !m.isAfter(endMonth);
+          m = DateTime(m.year, m.month + 1)
+        ) {
+          final slice = installmentForMonth(
+            startDate: plan.startDate,
+            totalInstallments: plan.totalInstallments,
+            currentInstallment: plan.currentInstallment,
+            monthRef: m,
+          );
+
+          if (slice == null) continue;
+
+          installmentsInPeriod += plan.installmentValue;
+          hasAny = true;
+
+          installmentsOccurrences.add(
+            InstallmentPlan(
+              id: plan.id,
+              description: plan.description,
+              categoryId: plan.categoryId,
+              person: plan.person,
+              installmentValue: plan.installmentValue,
+              totalInstallments: plan.totalInstallments,
+              currentInstallment:
+                  slice.installmentNumber, // competência correta
+              startDate: m, // mês da ocorrência
+            ),
+          );
         }
-        if (hasAny) installmentsForCategory.add(plan);
+
+        if (hasAny) {
+          installmentsForCategory.add(plan);
+        }
       }
 
       final Map<String, double> byPerson = {};
@@ -134,7 +153,7 @@ class _SummaryPageState extends State<SummaryPage> {
       final categoryMap = sumByCategoryId([
         ...debitsPeriod,
         ...creditsPeriod,
-        ...installmentsForCategory,
+        ...installmentsOccurrences,
       ]);
 
       if (!mounted) return;
@@ -160,6 +179,8 @@ class _SummaryPageState extends State<SummaryPage> {
   @override
   Widget build(BuildContext context) {
     final currentFilter = context.watch<DateFilterController>();
+    final budgetCtrl = context.watch<CategoryBudgetController>();
+    final categoriesCtrl = context.watch<CategoriesController>();
 
     if (loading) return const AppLoading();
 
@@ -216,6 +237,31 @@ class _SummaryPageState extends State<SummaryPage> {
                   : 'Fatura total (mês)',
               creditInvoice,
             ),
+
+            const SizedBox(height: AppSpacing.sm),
+            SectionTitle(
+              title: currentFilter.useRange
+                  ? 'Metas por categoria (mês)'
+                  : 'Metas por categoria (mês)',
+            ),
+            if (categoryTotals.isEmpty)
+              const AppCard(
+                child: EmptyState(
+                  icon: Icons.flag_outlined,
+                  title: 'Sem gastos por categoria no período',
+                ),
+              )
+            else
+              ...categoryTotals.entries.map((e) {
+                final limit = budgetCtrl.limitOf(e.key);
+                if (limit == null || limit <= 0) return const SizedBox.shrink();
+
+                return CategoryBudgetTile(
+                  categoryName: categoriesCtrl.nameOf(e.key),
+                  spent: e.value,
+                  limit: limit,
+                );
+              }),
 
             const SizedBox(height: AppSpacing.sm),
             SectionTitle(title: 'Resumo geral'),

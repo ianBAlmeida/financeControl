@@ -6,6 +6,7 @@ import 'package:finance_control/features/summary/category_totals.dart';
 import 'package:finance_control/shared/state/date_filter_controller.dart';
 import 'package:finance_control/shared/theme/app_colors.dart';
 import 'package:finance_control/shared/theme/app_spacing.dart';
+import 'package:finance_control/shared/utils/installment_period_helper.dart';
 import 'package:finance_control/shared/widgets/app_card.dart';
 import 'package:finance_control/shared/widgets/app_loading.dart';
 import 'package:finance_control/shared/widgets/empty_state.dart';
@@ -114,23 +115,38 @@ class _DashboardPageState extends State<DashboardPage> {
       double installmentsInPeriodTotal = 0;
       final List<InstallmentPlan> installmentsInPeriod = [];
 
+      final Map<String, InstallmentSlice> currentSliceByPlanId = {};
+
+      DateTime monthCursor(DateTime d) => DateTime(d.year, d.month);
+      final startMonth = monthCursor(start);
+      final endMonth = monthCursor(end);
+
       for (final plan in installments) {
         bool hasInstallmentInPeriod = false;
 
-        for (int i = 0; i < plan.totalInstallments; i++) {
-          final due = DateTime(
-            plan.startDate.year,
-            plan.startDate.month + i,
-            plan.startDate.day,
+        for (
+          DateTime m = startMonth;
+          !m.isAfter(endMonth);
+          m = DateTime(m.year, m.month + 1)
+        ) {
+          final slice = installmentForMonth(
+            startDate: plan.startDate,
+            totalInstallments: plan.totalInstallments,
+            currentInstallment: plan.currentInstallment,
+            monthRef: m,
           );
 
-          if (inRange(due)) {
+          if (slice != null) {
             installmentsInPeriodTotal += plan.installmentValue;
             hasInstallmentInPeriod = true;
+
+            currentSliceByPlanId[plan.id] = slice;
           }
         }
 
-        if (hasInstallmentInPeriod) installmentsInPeriod.add(plan);
+        if (hasInstallmentInPeriod) {
+          installmentsInPeriod.add(plan);
+        }
       }
 
       final categoryMap = sumByCategoryId([

@@ -1,7 +1,6 @@
 import 'package:finance_control/data/models.dart';
 import 'package:finance_control/data/repository.dart';
 import 'package:finance_control/shared/utils/expense_validators.dart';
-import 'package:finance_control/shared/utils/input_parses.dart';
 import 'package:finance_control/shared/widgets/category_dropdown_field.dart';
 import 'package:finance_control/shared/widgets/expense_dialog.dart';
 import 'package:flutter/material.dart';
@@ -72,30 +71,47 @@ class _InstallmentsDialogState extends State<InstallmentsDialog> {
     final total = int.tryParse(totalCtrl.text) ?? 0;
     final current = int.tryParse(currentCtrl.text) ?? 0;
 
-    final value = parsePtBrToDouble(valueCtrl.text);
+    final raw = valueCtrl.text.trim();
+
+    final normalized = raw.contains(',')
+        ? raw.replaceAll('.', ',').replaceAll(',', '.')
+        : raw;
+
+    final value = double.tryParse(normalized) ?? 0;
 
     final descError = validateDescription(descCtrl.text);
     final valueError = validatePositiveAmount(value);
     final installmentError = validateIntallmentRange(current, total);
+    final categoryError = _selectedCategoryId == null
+        ? 'Selecione uma categoria'
+        : null;
 
     final message =
-        descError ?? valueError ?? installmentError ?? 'Dados inválidos';
+        descError ??
+        valueError ??
+        installmentError ??
+        categoryError ??
+        'Dados inválidos';
 
-    if (descError != null || valueError != null || installmentError != null) {
+    if (descError != null ||
+        valueError != null ||
+        installmentError != null ||
+        categoryError != null) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
+      return;
     }
 
     final plan = InstallmentPlan(
       id: widget.existing?.id ?? 'temp',
-      description: descCtrl.text,
+      description: descCtrl.text.trim(),
       categoryId: _selectedCategoryId!,
-      person: personCtrl.text.isEmpty ? 'Você' : personCtrl.text,
+      person: personCtrl.text.isEmpty ? 'Você' : personCtrl.text.trim(),
       installmentValue: value,
-      totalInstallments: total,
       currentInstallment: current,
+      totalInstallments: total,
       startDate: selectedDate,
     );
 

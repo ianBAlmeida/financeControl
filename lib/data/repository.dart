@@ -1,4 +1,5 @@
 import 'package:finance_control/features/history/monthly_summary.dart';
+import 'package:finance_control/shared/utils/installment_period_helper.dart';
 import 'package:uuid/uuid.dart';
 import 'local_storage.dart';
 import 'models.dart';
@@ -137,31 +138,49 @@ class FinanceRepository {
     await _storage.saveBalances(_balances);
   }
 
-  Future<MonthlySummary> getMonthlySummary(int year, int month) async {
+  Future<MonthlySummary> getMonthlySummary(DateTime start, DateTime end) async {
     await ensureLoaded();
 
-    final initial = await getInitialBalance(year, month);
+    bool inRange(DateTime d) => !d.isBefore(start) && !d.isAfter(end);
 
     final debitTotal = _debits
-        .where((e) => e.date.year == year && e.date.month == month)
+        .where((e) => inRange(e.date))
         .fold<double>(0, (p, e) => p + e.amount);
 
     final crefitTotal = _credits
-        .where((e) => e.date.year == year && e.date.month == month)
+        .where((e) => inRange(e.date))
         .fold<double>(0, (p, e) => p + e.amount);
 
-    final installmentsTotal = _installments
-        .where((e) {
-          final start = DateTime(e.startDate.year, e.startDate.month);
-          final target = DateTime(year, month);
-          final diffMonths = (target.year) * 12 + (target.month - start.month);
-          return diffMonths >= 0 && diffMonths < e.totalInstallments;
-        })
-        .fold<double>(0, (p, e) => p + e.installmentValue);
+    DateTime monthCursor(DateTime d) => DateTime(d.year, d.month, 1);
+    final startMonth = monthCursor(start);
+    final endMonth = monthCursor(end);
+
+    double installmentsTotal = 0;
+
+    for (final p in _installments) {
+      for (
+        DateTime m = startMonth;
+        !m.isAfter(endMonth);
+        m = DateTime(m.year, m.month + 1)
+      ) {
+        final slice = installmentForMonth(
+          startDate: p.startDate,
+          totalInstallments: p.totalInstallments,
+          currentInstallment: p.currentInstallment, // âncora da regra nova
+          monthRef: m,
+        );
+
+        if (slice != null) {
+          installmentsTotal += p.installmentValue;
+        }
+      }
+    }
+
+    final initial = await getInitialBalance(start.year, start.month);
 
     return MonthlySummary(
-      year: year,
-      month: month,
+      year: start.year,
+      month: start.month,
       initialBalance: initial,
       debitTotal: debitTotal,
       creditTotal: crefitTotal,
@@ -182,30 +201,30 @@ class FinanceRepository {
         .where((e) => inRange(e.date))
         .fold<double>(0, (p, e) => p + e.amount);
 
-    final installmentTotal = _installments
-        .where((p) {
-          for (int i = 0; i < p.totalInstallments; i++) {
-            final due = DateTime(
-              p.startDate.year,
-              p.startDate.month,
-              p.startDate.day,
-            );
-            if (inRange(due)) return true;
-          }
-          return false;
-        })
-        .fold<double>(0, (sum, p) {
-          int count = 0;
-          for (int i = 0; i < p.totalInstallments; i++) {
-            final due = DateTime(
-              p.startDate.year,
-              p.startDate.month,
-              p.startDate.day,
-            );
-            if (inRange(due)) count++;
-          }
-          return sum + (count * p.installmentValue);
-        });
+    DateTime monthOnly(DateTime d) => DateTime(d.year, d.month, 1);
+    final startMonth = monthOnly(start);
+    final endMonth = monthOnly(end);
+
+    double installmentTotal = 0;
+
+    for (final p in _installments) {
+      for (
+        DateTime m = startMonth;
+        !m.isAfter(endMonth);
+        m = DateTime(m.year, m.month + 1)
+      ) {
+        final slice = installmentForMonth(
+          startDate: p.startDate,
+          totalInstallments: p.totalInstallments,
+          currentInstallment: p.currentInstallment,
+          monthRef: m,
+        );
+
+        if (slice != null) {
+          installmentTotal += p.installmentValue;
+        }
+      }
+    }
 
     final initial = await getInitialBalance(start.year, start.month);
 

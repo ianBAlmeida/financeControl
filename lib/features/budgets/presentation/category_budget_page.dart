@@ -59,6 +59,7 @@ class CategoryBudgetsPage extends StatelessWidget {
           decoration: const InputDecoration(
             labelText: 'Limite mensal',
             prefixText: 'R\$ ',
+            hintText: 'Ex.: 500,00',
           ),
         ),
         actions: [
@@ -66,10 +67,30 @@ class CategoryBudgetsPage extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancelar'),
           ),
+          if (currentLimit != null)
+            TextButton(
+              onPressed: () async {
+                await context.read<CategoryBudgetController>().remove(
+                  categoryId,
+                );
+                if (context.mounted) Navigator.pop(context);
+              },
+              child: const Text('Remover meta'),
+            ),
           FilledButton(
             onPressed: () async {
               final value = parsePtBrToDouble(ctrl.text);
-              if (value <= 0) return;
+
+              if (value <= 0) {
+                // vazio/zero: remove meta se existir
+                if (currentLimit != null) {
+                  await context.read<CategoryBudgetController>().remove(
+                    categoryId,
+                  );
+                }
+                if (context.mounted) Navigator.pop(context);
+                return;
+              }
 
               await context.read<CategoryBudgetController>().upsert(
                 categoryId,

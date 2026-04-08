@@ -22,4 +22,10 @@ class CategoryBudgetController extends ChangeNotifier {
     _limits[categoryId] = monthlyLimit;
     notifyListeners();
   }
+
+  Future<void> remove(String categoryId) async {
+    await repository.remove(categoryId);
+    _limits.remove(categoryId);
+    notifyListeners();
+  }
 }

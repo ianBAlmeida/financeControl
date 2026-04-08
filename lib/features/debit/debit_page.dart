@@ -233,8 +233,27 @@ class _DebitPageState extends State<DebitPage> {
                   subtitle: Text(
                     '${categoriesCtrl.nameOf(d.categoryId)} • ${d.person} • ${dateFmt.format(d.date)}',
                   ),
-                  trailing: Text('- ${currency.format(d.amount)}'),
-                  onLongPress: () => _removeDebit(d.id),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '- ${currency.format(d.amount)}',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        tooltip: 'Editar',
+                        onPressed: () => _addOrEdit(existing: d),
+                        icon: const Icon(Icons.edit_outlined),
+                      ),
+                      IconButton(
+                        tooltip: 'Excluir',
+                        onPressed: () => _removeDebit(d.id),
+                        icon: const Icon(Icons.delete_forever_outlined),
+                      ),
+                    ],
+                  ),
+                  onTap: () => _addOrEdit(existing: d),
                 ),
               ),
             ),

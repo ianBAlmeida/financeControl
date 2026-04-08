@@ -83,8 +83,28 @@ class _CreditPageState extends State<CreditPage> {
   }
 
   Future<void> _remove(String id) async {
-    await repo.removeCredit(id);
-    _load();
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Remover crédito'),
+        content: const Text('Tem certeza que deseja remover esse lançamento?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Remover'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await repo.removeCredit(id);
+      _load();
+    }
   }
 
   @override
@@ -138,8 +158,27 @@ class _CreditPageState extends State<CreditPage> {
                   subtitle: Text(
                     '${categoriesCtrl.nameOf(c.categoryId)} • ${c.person} • ${dateFmt.format(c.date)}',
                   ),
-                  trailing: Text('- ${currency.format(c.amount)}'),
-                  onLongPress: () => _remove(c.id),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '- ${currency.format(c.amount)}',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        tooltip: 'Editar',
+                        onPressed: () => _addOrEdit(existing: c),
+                        icon: const Icon(Icons.edit_outlined),
+                      ),
+                      IconButton(
+                        tooltip: 'Excluir',
+                        onPressed: () => _remove(c.id),
+                        icon: const Icon(Icons.delete_forever_outlined),
+                      ),
+                    ],
+                  ),
+                  onTap: () => _addOrEdit(existing: c),
                 ),
               ),
             ),

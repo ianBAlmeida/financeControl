@@ -43,6 +43,12 @@ class CategoryBudgetRepository {
     await saveAll(all);
   }
 
+  Future<void> remove(String categoryId) async {
+    final all = await getAll();
+    all.removeWhere((e) => e.categoryId == categoryId);
+    await saveAll(all);
+  }
+
   Future<double?> limitOf(String categoryId) async {
     final all = await getAll();
     for (final b in all) {

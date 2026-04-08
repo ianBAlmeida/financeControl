@@ -1,6 +1,7 @@
 import 'package:finance_control/data/models.dart';
 import 'package:finance_control/data/repository.dart';
 import 'package:finance_control/features/categories/presentation/categories_controller.dart';
+import 'package:finance_control/features/dashboard/quick_actions_items.dart';
 import 'package:finance_control/features/summary/category_pie_chart.dart';
 import 'package:finance_control/features/summary/category_totals.dart';
 import 'package:finance_control/shared/state/date_filter_controller.dart';
@@ -273,39 +274,42 @@ class _DashboardPageState extends State<DashboardPage> {
 
             SectionTitle(title: 'Atalhos'),
             AppCard(
-              child: Wrap(
-                spacing: AppSpacing.xs,
-                runSpacing: AppSpacing.xs,
-                children: [
-                  _NavChip(
+              child: QuickActionsGrid(
+                items: [
+                  QuickActionsItems(
                     label: 'Débito',
                     icon: Icons.account_balance_wallet_outlined,
                     onTap: () => _openRouteAndRefresh('/debit'),
                   ),
-                  _NavChip(
+                  QuickActionsItems(
                     label: 'Crédito',
                     icon: Icons.credit_card,
                     onTap: () => _openRouteAndRefresh('/credit'),
                   ),
-                  _NavChip(
-                    label: 'Categorias',
-                    icon: Icons.category_rounded,
-                    onTap: () => _openRouteAndRefresh('/category'),
-                  ),
-                  _NavChip(
-                    label: 'Resumo',
-                    icon: Icons.assessment,
-                    onTap: () => _openRouteAndRefresh('/summary'),
-                  ),
-                  _NavChip(
+                  QuickActionsItems(
                     label: 'Parcelas',
                     icon: Icons.payments,
                     onTap: () => _openRouteAndRefresh('/installments'),
                   ),
-                  _NavChip(
+                  QuickActionsItems(
+                    label: 'Categorias',
+                    icon: Icons.category_rounded,
+                    onTap: () => _openRouteAndRefresh('/category'),
+                  ),
+                  QuickActionsItems(
+                    label: 'Resumo',
+                    icon: Icons.assessment,
+                    onTap: () => _openRouteAndRefresh('/summary'),
+                  ),
+                  QuickActionsItems(
                     label: 'Histórico',
                     icon: Icons.calendar_month,
                     onTap: () => _openRouteAndRefresh('/history'),
+                  ),
+                  QuickActionsItems(
+                    label: 'Metas',
+                    icon: Icons.grading_outlined,
+                    onTap: () => _openRouteAndRefresh('/category-budget'),
                   ),
                 ],
               ),
@@ -338,27 +342,6 @@ class _DashboardPageState extends State<DashboardPage> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _NavChip extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _NavChip({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ActionChip(
-      avatar: Icon(icon, size: 18),
-      label: Text(label),
-      onPressed: onTap,
     );
   }
 }

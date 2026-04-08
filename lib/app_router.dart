@@ -1,3 +1,4 @@
+import 'package:finance_control/features/budgets/presentation/category_budget_page.dart';
 import 'package:finance_control/features/categories/presentation/category_page.dart';
 import 'package:finance_control/features/debit/debit_page.dart';
 import 'package:finance_control/features/credit/installments_page.dart';
@@ -33,6 +34,10 @@ final appRouter = GoRouter(
         GoRoute(
           path: 'category',
           builder: (context, state) => const CategoriesPage(),
+        ),
+        GoRoute(
+          path: 'category-budget',
+          builder: (context, state) => const CategoryBudgetsPage(),
         ),
       ],
     ),

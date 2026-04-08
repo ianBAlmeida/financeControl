@@ -1,20 +1,24 @@
-<meta name="theme-color" content="#0B1026">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="finance_control">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
 <style>
   html, body {
     margin: 0;
     padding: 0;
-    background: #0B1026;
     min-height: 100%;
   }
-  body {
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
+
+  /* Só pinta a área do notch/top safe area */
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: env(safe-area-inset-top);
+    background: #0B1026; /* mesma cor do topo do seu app */
+    z-index: 9999;
+    pointer-events: none;
   }
 </style>

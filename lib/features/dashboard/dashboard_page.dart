@@ -191,6 +191,7 @@ class _DashboardPageState extends State<DashboardPage> {
     }
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

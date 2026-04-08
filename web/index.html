@@ -7,7 +7,7 @@
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="finance_control">
 
-  <!-- iPhone / PWA -->
+  <!-- PWA / iOS -->
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -21,15 +21,55 @@
   <title>finance_control</title>
 
   <style>
+    :root {
+      --notch-color: #0B1026;
+    }
+
     html, body {
       margin: 0;
       padding: 0;
+      min-height: 100%;
       background: transparent;
     }
-    /* não usar padding safe-area no body aqui */
+
+    /* fallback definitivo do notch */
+    #ios-notch-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: env(safe-area-inset-top, 0px);
+      background: var(--notch-color);
+      z-index: 2147483647;
+      pointer-events: none;
+    }
+
+    /* fallback extra: alguns iOS retornam 0 no env em cenários específicos */
+    @supports (-webkit-touch-callout: none) {
+      #ios-notch-overlay.force-ios {
+        height: max(env(safe-area-inset-top, 0px), 24px);
+      }
+    }
   </style>
 </head>
 <body>
+  <div id="ios-notch-overlay"></div>
+
+  <script>
+    (function () {
+      const ua = window.navigator.userAgent || "";
+      const isIOS = /iPhone|iPad|iPod/i.test(ua);
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+      // aplica classe de reforço no iOS (principalmente quando instalado)
+      const overlay = document.getElementById('ios-notch-overlay');
+      if (isIOS) overlay.classList.add('force-ios');
+
+      // opcional: se quiser mostrar só quando instalado, descomente:
+      // if (!(isIOS && isStandalone)) overlay.style.display = 'none';
+    })();
+  </script>
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

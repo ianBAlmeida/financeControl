@@ -193,6 +193,7 @@ class _DashboardPageState extends State<DashboardPage> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
+        title: const Text('Controle Financeiro'),
         titleTextStyle: const TextStyle(
           fontSize: 22,
           color: AppColors.textPrimary,

@@ -37,7 +37,9 @@ class _InstallmentsDialogState extends State<InstallmentsDialog> {
     if (e != null) {
       descCtrl.text = e.description;
       personCtrl.text = e.person;
-      valueCtrl.text = e.installmentValue.toStringAsFixed(2);
+      valueCtrl.text = e.installmentValue
+          .toStringAsFixed(2)
+          .replaceAll('.', ',');
       totalCtrl.text = e.totalInstallments.toString();
       currentCtrl.text = e.currentInstallment.toString();
       _selectedCategoryId = e.categoryId;

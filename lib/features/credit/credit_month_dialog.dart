@@ -35,7 +35,7 @@ class _CreditMonthDialogState extends State<CreditMonthDialog> {
     if (e != null) {
       descCtrl.text = e.description;
       personCtrl.text = e.person;
-      valueCtrl.text = e.amount.toStringAsFixed(2);
+      valueCtrl.text = e.amount.toStringAsFixed(2).replaceAll('.', ',');
       _selectedCategoryId = e.categoryId;
       selectedDate = e.date;
     }

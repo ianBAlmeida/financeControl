@@ -5,6 +5,7 @@ import 'package:finance_control/features/credit/credit_month_dialog.dart';
 import 'package:finance_control/shared/state/date_filter_controller.dart';
 import 'package:finance_control/shared/theme/app_colors.dart';
 import 'package:finance_control/shared/theme/app_spacing.dart';
+import 'package:finance_control/shared/theme/gradient_scaffold.dart';
 import 'package:finance_control/shared/widgets/app_card.dart';
 import 'package:finance_control/shared/widgets/app_loading.dart';
 import 'package:finance_control/shared/widgets/empty_state.dart';
@@ -116,8 +117,14 @@ class _CreditPageState extends State<CreditPage> {
 
     final total = credits.fold<double>(0, (p, e) => p + e.amount);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Crédito')),
+    return AppGradientScaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: const Text('Crédito'),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.sm),
         children: [

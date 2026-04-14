@@ -7,6 +7,7 @@ import 'package:finance_control/features/summary/category_totals.dart';
 import 'package:finance_control/shared/state/date_filter_controller.dart';
 import 'package:finance_control/shared/theme/app_colors.dart';
 import 'package:finance_control/shared/theme/app_spacing.dart';
+import 'package:finance_control/shared/theme/gradient_scaffold.dart';
 import 'package:finance_control/shared/utils/installment_period_helper.dart';
 import 'package:finance_control/shared/widgets/app_card.dart';
 import 'package:finance_control/shared/widgets/app_loading.dart';
@@ -190,8 +191,12 @@ class _DashboardPageState extends State<DashboardPage> {
       return '${dateFmt.format(filter.effectiveStart)} até ${dateFmt.format(filter.effectiveEnd)}';
     }
 
-    return Scaffold(
+    return AppGradientScaffold(
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: true,
         title: const Text('Controle Financeiro'),
         titleTextStyle: const TextStyle(

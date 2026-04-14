@@ -1,5 +1,6 @@
 import 'package:finance_control/features/budgets/presentation/category_budget_controller.dart';
 import 'package:finance_control/features/categories/presentation/categories_controller.dart';
+import 'package:finance_control/shared/theme/gradient_scaffold.dart';
 import 'package:finance_control/shared/utils/input_parses.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -13,8 +14,14 @@ class CategoryBudgetsPage extends StatelessWidget {
     final budgetCtrl = context.watch<CategoryBudgetController>();
     final active = categoriesCtrl.active;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Metas por categoria')),
+    return AppGradientScaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: const Text('Metas por categoria'),
+      ),
       body: ListView.builder(
         padding: const EdgeInsets.all(12),
         itemCount: active.length,

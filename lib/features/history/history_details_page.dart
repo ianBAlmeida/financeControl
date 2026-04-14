@@ -1,5 +1,6 @@
 import 'package:finance_control/data/repository.dart';
 import 'package:finance_control/features/categories/presentation/categories_controller.dart';
+import 'package:finance_control/shared/theme/gradient_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -165,8 +166,14 @@ class _HistoryDetailsPageState extends State<HistoryDetailsPage> {
     final subtitlePeriod =
         '${dateFmt.format(widget.start)} até ${dateFmt.format(widget.end)}';
 
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+    return AppGradientScaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: Text(widget.title),
+      ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : Column(

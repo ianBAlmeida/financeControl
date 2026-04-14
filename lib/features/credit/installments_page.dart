@@ -5,6 +5,7 @@ import 'package:finance_control/features/credit/installments_dialog.dart';
 import 'package:finance_control/shared/state/date_filter_controller.dart';
 import 'package:finance_control/shared/theme/app_colors.dart';
 import 'package:finance_control/shared/theme/app_spacing.dart';
+import 'package:finance_control/shared/theme/gradient_scaffold.dart';
 import 'package:finance_control/shared/utils/installment_period_helper.dart';
 import 'package:finance_control/shared/widgets/app_card.dart';
 import 'package:finance_control/shared/widgets/app_loading.dart';
@@ -133,8 +134,14 @@ class _InstallmentsPageState extends State<InstallmentsPage> {
 
     if (loading) return const AppLoading();
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Parcelamentos')),
+    return AppGradientScaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: const Text('Parcelamentos'),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.sm),
         children: [

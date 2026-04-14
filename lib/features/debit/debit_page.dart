@@ -5,6 +5,7 @@ import 'package:finance_control/features/debit/debit_dialog.dart';
 import 'package:finance_control/shared/state/date_filter_controller.dart';
 import 'package:finance_control/shared/theme/app_colors.dart';
 import 'package:finance_control/shared/theme/app_spacing.dart';
+import 'package:finance_control/shared/theme/gradient_scaffold.dart';
 import 'package:finance_control/shared/utils/input_parses.dart';
 import 'package:finance_control/shared/widgets/app_card.dart';
 import 'package:finance_control/shared/widgets/app_loading.dart';
@@ -171,8 +172,12 @@ class _DebitPageState extends State<DebitPage> {
 
     if (loading) return const AppLoading();
 
-    return Scaffold(
+    return AppGradientScaffold(
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         title: const Text('Débito'),
         actions: [
           IconButton(

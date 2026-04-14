@@ -2,6 +2,7 @@ import 'package:finance_control/data/category_budget_repository.dart';
 import 'package:finance_control/features/categories/domain/category_colors.dart';
 import 'package:finance_control/features/categories/domain/category_model.dart';
 import 'package:finance_control/features/categories/presentation/categories_controller.dart';
+import 'package:finance_control/shared/theme/gradient_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -28,8 +29,15 @@ class _CategoriesPageState extends State<CategoriesPage> {
     final archived = ctrl.all.where((c) => c.isArchived).toList()
       ..sort((a, b) => a.order.compareTo(b.order));
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Categorias'), centerTitle: true),
+    return AppGradientScaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: const Text('Categorias'),
+        centerTitle: true,
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openCreateDialog(context),
         icon: const Icon(Icons.add),

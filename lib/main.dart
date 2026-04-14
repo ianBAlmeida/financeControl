@@ -50,9 +50,12 @@ class _Bootstrap extends StatelessWidget {
         ChangeNotifierProvider<CategoriesController>(
           create: (_) => CategoriesController(CategoryRepository())..load(),
         ),
-        ChangeNotifierProvider<CategoryBudgetController>(
-          create: (_) =>
-              CategoryBudgetController(CategoryBudgetRepository())..load(),
+        Provider<CategoryBudgetRepository>(
+          create: (_) => CategoryBudgetRepository(),
+        ),
+        ChangeNotifierProvider<CategoriesController>(
+          create: (context) =>
+              CategoriesController(context.read<CategoryRepository>())..load(),
         ),
       ],
       child: const FinanceApp(),

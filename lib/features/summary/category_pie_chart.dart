@@ -4,7 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 class CategoryPieChart extends StatelessWidget {
-  final Map<String, double> totals; // categoryId -> total
+  final Map<String, double> totals;
   final CategoriesController categoriesCtrl;
 
   const CategoryPieChart({
@@ -20,11 +20,9 @@ class CategoryPieChart extends StatelessWidget {
       return const Center(child: Text('Sem dados para o período!'));
     }
 
-    // Ordena do maior para o menor
     final sorted = totals.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    // Top 6 + Outros
     const topN = 6;
     final top = sorted.take(topN).toList();
     final others = sorted.skip(topN).fold<double>(0, (p, e) => p + e.value);
@@ -60,7 +58,7 @@ class CategoryPieChart extends StatelessWidget {
         PieChartSectionData(
           color: const Color(0xFF9CA3AF),
           value: others,
-          title: 'Outros\n$percent%',
+          title: 'Demais categorias\n$percent%', // <- antes era "Outros"
           radius: 98,
           titleStyle: const TextStyle(
             fontSize: 11,

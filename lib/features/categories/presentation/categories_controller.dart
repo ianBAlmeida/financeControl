@@ -39,7 +39,7 @@ class CategoriesController extends ChangeNotifier {
 
     final created = CategoryModel(
       id: uniqueId,
-      name: name,
+      name: normalizedName,
       colorHex: colorHex,
       order: nextOrder,
       isArchived: false,
@@ -64,8 +64,14 @@ class CategoriesController extends ChangeNotifier {
     if (index < 0) return;
 
     final current = _all[index];
-    _all[index] = current.copywith(isArchived: !current.isArchived);
+    _all[index] = current.copyWith(isArchived: !current.isArchived);
 
+    await repository.saveAll(_all);
+    notifyListeners();
+  }
+
+  Future<void> deleteCategory(String id) async {
+    _all = _all.where((c) => c.id != id).toList();
     await repository.saveAll(_all);
     notifyListeners();
   }

@@ -147,7 +147,7 @@ class FinanceRepository {
         .where((e) => inRange(e.date))
         .fold<double>(0, (p, e) => p + e.amount);
 
-    final crefitTotal = _credits
+    final creditTotal = _credits
         .where((e) => inRange(e.date))
         .fold<double>(0, (p, e) => p + e.amount);
 
@@ -183,7 +183,7 @@ class FinanceRepository {
       month: start.month,
       initialBalance: initial,
       debitTotal: debitTotal,
-      creditTotal: crefitTotal,
+      creditTotal: creditTotal,
       installmentsTotal: installmentsTotal,
     );
   }

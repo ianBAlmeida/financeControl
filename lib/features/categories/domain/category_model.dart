@@ -13,7 +13,7 @@ class CategoryModel {
     this.isArchived = false,
   });
 
-  CategoryModel copywith({
+  CategoryModel copyWith({
     String? id,
     String? name,
     String? colorHex,
@@ -29,12 +29,29 @@ class CategoryModel {
     );
   }
 
+  // Compatibilidade com chamadas antigas
+  CategoryModel copywith({
+    String? id,
+    String? name,
+    String? colorHex,
+    int? order,
+    bool? isArchived,
+  }) {
+    return copyWith(
+      id: id,
+      name: name,
+      colorHex: colorHex,
+      order: order,
+      isArchived: isArchived,
+    );
+  }
+
   Map<String, dynamic> toMap() => {
     'id': id,
     'name': name,
     'colorHex': colorHex,
     'order': order,
-    'isArcheved': isArchived,
+    'isArchived': isArchived, // corrigido
   };
 
   factory CategoryModel.fromMap(Map<String, dynamic> map) => CategoryModel(

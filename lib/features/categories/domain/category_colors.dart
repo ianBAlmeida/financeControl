@@ -4,12 +4,16 @@ class CategoryColors {
   static const palette = <Color>[
     Color(0xFF4F46E5),
     Color(0xFF06B6D4),
-    Color(0xFF10B981),
+    Color.fromARGB(255, 143, 128, 128),
     Color(0xFFF59E0B),
-    Color(0xFFEF4444),
+    Color.fromARGB(255, 175, 61, 61),
     Color(0xFF8B5CF6),
     Color(0xFFEC4899),
     Color(0xFF84CC16),
+    Color.fromARGB(255, 255, 0, 0),
+    Color.fromARGB(255, 58, 58, 56),
+    Color.fromARGB(255, 28, 16, 139),
+    Color.fromARGB(255, 27, 224, 165),
   ];
 
   static Color byId(String id) {

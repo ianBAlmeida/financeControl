@@ -4,6 +4,7 @@ import 'package:finance_control/data/category_budget_repository.dart';
 import 'package:finance_control/data/category_repository.dart';
 import 'package:finance_control/data/local_storage.dart';
 import 'package:finance_control/data/repository.dart';
+import 'package:finance_control/features/budgets/presentation/category_budget_controller.dart';
 import 'package:finance_control/features/categories/presentation/categories_controller.dart';
 import 'package:finance_control/shared/state/date_filter_controller.dart';
 import 'package:finance_control/shared/theme/app_theme.dart';
@@ -52,6 +53,11 @@ class _Bootstrap extends StatelessWidget {
         ChangeNotifierProvider<CategoriesController>(
           create: (context) =>
               CategoriesController(context.read<CategoryRepository>())..load(),
+        ),
+        ChangeNotifierProvider<CategoryBudgetController>(
+          create: (context) =>
+              CategoryBudgetController(context.read<CategoryBudgetRepository>())
+                ..load(),
         ),
       ],
       child: const FinanceApp(),

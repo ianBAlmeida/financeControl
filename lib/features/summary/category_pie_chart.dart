@@ -4,7 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 class CategoryPieChart extends StatelessWidget {
-  final Map<String, double> totals;
+  final Map<String, double> totals; // categoryId -> total
   final CategoriesController categoriesCtrl;
 
   const CategoryPieChart({
@@ -23,13 +23,23 @@ class CategoryPieChart extends StatelessWidget {
     final sorted = totals.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    const topN = 6;
-    final top = sorted.take(topN).toList();
-    final others = sorted.skip(topN).fold<double>(0, (p, e) => p + e.value);
+    // Regra nova: só agrega quando tiver MUITAS categorias
+    const maxSlicesWithoutAggregation = 8;
+    final shouldAggregate = sorted.length > maxSlicesWithoutAggregation;
+
+    final visible = shouldAggregate
+        ? sorted.take(maxSlicesWithoutAggregation - 1).toList()
+        : sorted;
+
+    final aggregatedValue = shouldAggregate
+        ? sorted
+              .skip(maxSlicesWithoutAggregation - 1)
+              .fold<double>(0, (p, e) => p + e.value)
+        : 0.0;
 
     final sections = <PieChartSectionData>[];
 
-    for (final e in top) {
+    for (final e in visible) {
       final category = categoriesCtrl.byId(e.key);
       final name = category?.name ?? 'Sem categoria';
       final color = category != null
@@ -52,13 +62,13 @@ class CategoryPieChart extends StatelessWidget {
       );
     }
 
-    if (others > 0) {
-      final percent = (others / totalValue * 100).toStringAsFixed(1);
+    if (aggregatedValue > 0) {
+      final percent = (aggregatedValue / totalValue * 100).toStringAsFixed(1);
       sections.add(
         PieChartSectionData(
           color: const Color(0xFF9CA3AF),
-          value: others,
-          title: 'Demais categorias\n$percent%', // <- antes era "Outros"
+          value: aggregatedValue,
+          title: 'Demais categorias\n$percent%',
           radius: 98,
           titleStyle: const TextStyle(
             fontSize: 11,

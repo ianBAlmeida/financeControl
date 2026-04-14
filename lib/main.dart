@@ -4,7 +4,6 @@ import 'package:finance_control/data/category_budget_repository.dart';
 import 'package:finance_control/data/category_repository.dart';
 import 'package:finance_control/data/local_storage.dart';
 import 'package:finance_control/data/repository.dart';
-import 'package:finance_control/features/budgets/presentation/category_budget_controller.dart';
 import 'package:finance_control/features/categories/presentation/categories_controller.dart';
 import 'package:finance_control/shared/state/date_filter_controller.dart';
 import 'package:finance_control/shared/theme/app_theme.dart';
@@ -17,13 +16,12 @@ import 'package:provider/provider.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // iOS/Android status bar (notch area)
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent, // fundo desenhado pelo app
-      statusBarIconBrightness: Brightness.light, // Android
-      statusBarBrightness: Brightness.dark, // iOS -> ícones claros
-      systemNavigationBarColor: Colors.black, // Android
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      statusBarBrightness: Brightness.dark,
+      systemNavigationBarColor: Colors.black,
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
@@ -44,14 +42,12 @@ class _Bootstrap extends StatelessWidget {
         Provider<FinanceRepository>(
           create: (_) => FinanceRepository(LocalStorage()),
         ),
-        ChangeNotifierProvider<DateFilterController>(
-          create: (_) => DateFilterController(),
-        ),
-        ChangeNotifierProvider<CategoriesController>(
-          create: (_) => CategoriesController(CategoryRepository())..load(),
-        ),
+        Provider<CategoryRepository>(create: (_) => CategoryRepository()),
         Provider<CategoryBudgetRepository>(
           create: (_) => CategoryBudgetRepository(),
+        ),
+        ChangeNotifierProvider<DateFilterController>(
+          create: (_) => DateFilterController(),
         ),
         ChangeNotifierProvider<CategoriesController>(
           create: (context) =>
